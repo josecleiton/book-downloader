@@ -1,0 +1,8 @@
+Pegar a página html de busca a partir da entrada do usuário
+Buscar nessa página html a tabela com os resultados da pesquisa
+Montar uma representação dessa tabela com a biblioteca curses
+Aceitar a entrada do usuário [1..n] como seleção na tabela anterior
+Baixar a pagina html da seleção (feita anteriormente)
+Buscar nessa nova pagina html um link com o children "GET" e href com extensão pdf
+Baixar o pdf para o diretório especificado pelo usuário no config.h
+DONE
