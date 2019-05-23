@@ -1,5 +1,5 @@
-Pegar a página html de busca a partir da entrada do usuário
-Buscar nessa página html a tabela com os resultados da pesquisa
+Pegar a página html de busca a partir da entrada do usuário ! DONE
+Buscar nessa página html a tabela com os resultados da pesquisa ! DONE
 Montar uma representação dessa tabela com a biblioteca curses
 Aceitar a entrada do usuário [1..n] como seleção na tabela anterior
 Baixar a pagina html da seleção (feita anteriormente)
