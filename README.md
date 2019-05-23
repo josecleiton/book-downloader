@@ -1,3 +1,4 @@
 # book-downloader
 Simple NCurses Book Downloader 
-A pdf/djvu/epub downloader using gen.lib.rus.ec!
+
+A pdf/djvu/epub downloader using [Library Genesis](http://gen.lib.rus.ec/).
