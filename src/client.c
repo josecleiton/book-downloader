@@ -5,7 +5,7 @@ int parse_http_header(int sock, ...) {
   int bytes_received;
   while ((bytes_received = recv(sock, buffer_cursor, 1, 0))) {
     if (bytes_received == -1) {
-       exit_and_report();
+      exit_and_report();
     }
     if ((buffer_cursor[-3] == '\r') && (buffer_cursor[-2] == '\n') &&
         (buffer_cursor[-1] == '\r') && (*buffer_cursor == '\n'))
@@ -21,20 +21,23 @@ int parse_http_header(int sock, ...) {
     } else {
       bytes_received = NO_CONTENT_LENGTH;
     }
-    if ((buffer_cursor = strstr(buffer_cursor, "Content-Disposition: attachment"))) {
+    if ((buffer_cursor =
+             strstr(buffer_cursor, "Content-Disposition: attachment"))) {
       /* http header of book file */
       va_list arg_list;
       va_start(arg_list, sock);
       char *book_filename = va_arg(arg_list, char *);
-      sscanf(buffer_cursor, "Content-Disposition: attachment; filename=\"%[^\"]",
+      sscanf(buffer_cursor,
+             "Content-Disposition: attachment; filename=\"%[^\"]",
              book_filename);
       va_end(arg_list);
     }
   }
   return bytes_received;
 }
+
 char *page_downloader(const char *hostname, const char *path,
-                           const char *filename) {
+                      const char *filename) {
   char buffer[BUFSIZ];
   char request[BUFFER_SIZE];
   char request_template[] = "GET /%s HTTP/1.1 \r\nHost: %s\r\n\r\n";

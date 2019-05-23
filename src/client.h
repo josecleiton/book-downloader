@@ -1,8 +1,8 @@
 #ifndef CLIENT_H
 #define CLIENT_H
 
-#include <arpa/inet.h>
 #include "error.h"
+#include <arpa/inet.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <stdarg.h>
@@ -12,12 +12,12 @@
 #include <unistd.h>
 
 enum {
-   NO_CONTENT_LENGTH = -1,
-   BUFFER_SIZE = 1024,
+  NO_CONTENT_LENGTH = -1,
+  BUFFER_SIZE = 1024,
 };
 
 int parse_http_header(int sock, ...);
 char *page_downloader(const char *hostname, const char *path,
-                           const char *filename);
+                      const char *filename);
 
 #endif

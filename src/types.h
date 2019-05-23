@@ -18,9 +18,8 @@ struct book_t {
   char *series;
 };
 
-
-void book_t_print(const struct book_t* book);
-void book_t_free(const struct book_t* book);
-void array_book_t_free(struct book_t** ptr, const int size);
+void book_t_print(const struct book_t *book);
+void book_t_free(const struct book_t *book);
+void array_book_t_free(struct book_t **ptr, const int size);
 
 #endif
