@@ -18,19 +18,44 @@ void book_t_free(const struct book_t *book) {
   free(book->lang);
   free(book->size);
   free(book->ext);
+  if (book->edition) {
+     free(book->edition);
+  }
+  if (book->id) {
+     free(book->id);
+  }
   if (book->isbn) {
     free(book->isbn);
   }
   if (book->series) {
     free(book->series);
   }
+  if (book->volume) {
+     free(book->volume);
+  }
+  if(book->description) {
+     free(book->description);
+  }
+  if(book->download_url) {
+     free(book->download_url);
+  }
+  if(book->path) {
+     free(book->path);
+  }
 }
 
-void array_book_t_free(struct book_t **ptr_to_array, const int size) {
-  struct book_t *arr = *ptr_to_array;
-  for (int i = 0; i < size; i += 1) {
-    book_t_free(&arr[i]);
+void array_book_t_free(BOOK_CONTAINER* book_arr) {
+  for (int i = 0; i < book_arr->size; i += 1) {
+    book_t_free(&book_arr->books[i]);
   }
-  free(*ptr_to_array);
-  *ptr_to_array = NULL;
+  free(book_arr->books);
+}
+
+void pages_book_t_free(struct pages* lib) {
+   uint64_t bitset = lib->bitset;
+   for (uint64_t curr_lsone = LSONE(bitset), cursor = 0; bitset;
+        bitset ^= (1ULL << cursor), curr_lsone = LSONE(bitset)) {
+     cursor = log(curr_lsone) / log(2);
+     array_book_t_free(&lib->lib[cursor]);
+   }
 }

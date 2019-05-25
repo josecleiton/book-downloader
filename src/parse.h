@@ -12,7 +12,7 @@
 /* PARSE GEN LIB RUS EC HTML PAGES */
 
 enum {
-  AUTHORS,
+  AUTHORS = 1,
   TITLE,
   PUBLISHER,
   YEAR,
@@ -22,19 +22,20 @@ enum {
   EXT,
   ISBN,
   SERIES,
-  BUFFER_SIZE = 51200
+  PARSE_BUFFER_SIZE = 65536
 };
 
 /* return all books in the page */
-char *search_page(const char *filename, struct book_t **book_array,
-                  int *book_array_len);
+char *search_page(FILE *page_file, struct book_t **book_array,
+                  int *book_array_len, int *status, int *max_pages_in_search);
 /* return: download link of selected book */
-char *book_page(const char *filename, struct book_t *selected_book,
-                char **download_url, char **description);
+char *book_page(FILE* page_file , struct book_t *selected_book);
+char *mirror_page(FILE* page_file, struct book_t *selected_book);
 
 FILE *open_file(const char *filename);
 void format_file(FILE *stream, register char *buffer);
-void handle_td_element(const char *buffer, const int buffer_len,
+int handle_td_element(const char *buffer, const int buffer_len,
                        struct book_t *book, const int which_td);
+int get_max_pages(const char* buffer);
 
 #endif

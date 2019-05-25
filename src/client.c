@@ -1,7 +1,7 @@
 #include "client.h"
 
 int parse_http_header(int sock, ...) {
-  char buff[BUFFER_SIZE] = "", *buffer_cursor = buff + 4;
+  char buff[CLIENT_BUFFER_SIZE] = "", *buffer_cursor = buff + 4;
   int bytes_received;
   while ((bytes_received = recv(sock, buffer_cursor, 1, 0))) {
     if (bytes_received == -1) {
@@ -14,14 +14,14 @@ int parse_http_header(int sock, ...) {
   }
   *buffer_cursor = '\0';
   buffer_cursor = buff + 4;
-  puts(buffer_cursor);
+  /* puts(buffer_cursor); */
   if (bytes_received) {
     if ((buffer_cursor = strstr(buffer_cursor, "Content-Length:"))) {
       sscanf(buffer_cursor, "%*s %d", &bytes_received);
     } else {
       bytes_received = NO_CONTENT_LENGTH;
     }
-    if ((buffer_cursor =
+    if (buffer_cursor && (buffer_cursor =
              strstr(buffer_cursor, "Content-Disposition: attachment"))) {
       /* http header of book file */
       va_list arg_list;
@@ -37,10 +37,11 @@ int parse_http_header(int sock, ...) {
 }
 
 char *page_downloader(const char *hostname, const char *path,
-                      const char *filename) {
+                      const int file_status, FILE **rcv_file, ...) {
   char buffer[BUFSIZ];
-  char request[BUFFER_SIZE];
+  char request[CLIENT_BUFFER_SIZE] = { '\0' };
   char request_template[] = "GET /%s HTTP/1.1 \r\nHost: %s\r\n\r\n";
+  char filename[255];
   int socketfd;
   struct addrinfo hints, *servinfo, *p;
   int status, request_len;
@@ -74,44 +75,61 @@ char *page_downloader(const char *hostname, const char *path,
     return error_msg("[ERROR] client.c - failed to connect");
   }
   request_len =
-      snprintf(request, BUFFER_SIZE, request_template, path, hostname);
+      snprintf(request, CLIENT_BUFFER_SIZE, request_template, path, hostname);
   fprintf(stderr, "Request = %s", request);
-  if (send(socketfd, request, BUFFER_SIZE, 0) == -1) {
+  if (send(socketfd, request, CLIENT_BUFFER_SIZE, 0) == -1) {
     perror("send");
     return error_msg("[ERROR] client.c - send failed");
   }
   int content_length;
-  if (*filename) {
+  if (file_status == 1) {
     content_length = parse_http_header(socketfd);
+    *rcv_file = tmpfile();
   } else {
     content_length = parse_http_header(socketfd, filename);
+    va_list arg_list;
+    va_start(arg_list, rcv_file);
+    char **book_filename = va_arg(arg_list, char **);
+    const long book_fn_len = va_arg(arg_list, const size_t);
+    const long catched_fn_len = strlen(filename);
+    char *realloc_fallback; /* read realloc doc*/
+    if ((realloc_fallback =
+             realloc(*book_filename, (book_fn_len + catched_fn_len + 2) *
+                                         sizeof(char))) == NULL) {
+      free(*book_filename);
+      exit_and_report();
+    }
+    *book_filename = realloc_fallback;
+    strcat(*book_filename, filename);
+
+    *rcv_file = fopen(*book_filename, "wb+");
+    va_end(arg_list);
   }
-  int bytes = 0;
-  FILE *rcv_file = fopen(filename, "wb");
-  if (rcv_file == NULL) {
+  /* *rcv_file must be "free" in sncbd.c */
+  if (*rcv_file == NULL) {
     return error_msg("[ERROR] client.c - failed to open file");
   }
+  int bytes = 0;
   /* receive bytes from server and output it in rcv_file stream */
   while ((bytes_received = recv(socketfd, buffer, BUFSIZ, 0))) {
     if (bytes_received == -1) {
       perror("recv");
       return error_msg("[ERROR] client.c - failed on recv function");
     }
-    fwrite(buffer, sizeof(char), bytes_received, rcv_file);
+    fwrite(buffer, sizeof(char), bytes_received, *rcv_file);
     bytes += bytes_received;
     if (content_length != NO_CONTENT_LENGTH && bytes >= content_length)
       break;
   }
+  fflush(*rcv_file);
   /* free in sncbd.c */
-  char *log_msg = (char *)malloc(48 * sizeof(char));
+  char *log_msg = (char *)ecalloc(LOGMSG_SIZE, sizeof(char));
   snprintf(log_msg + 1, LOGMSG_SIZE - 1, "Finished! %.2lf KBs transfered.\n",
            bytes / (float)1024);
-  *log_msg = '\0';
 
   /* post rotines */
   freeaddrinfo(servinfo);
   close(socketfd);
-  fclose(rcv_file);
   return log_msg;
 }
 

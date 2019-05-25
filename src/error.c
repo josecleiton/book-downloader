@@ -12,6 +12,9 @@ char *error_msg(const char *msg) {
 }
 
 void exit_and_report(void) {
-  fprintf(stderr, "%s", strerror(errno));
-  exit(EXIT_FAILURE);
+   die(strerror(errno));
+}
+
+void usage(void) {
+   die("usage: -s STR [ -b STR ] [ - d STR ]");
 }

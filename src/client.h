@@ -13,11 +13,11 @@
 
 enum {
   NO_CONTENT_LENGTH = -1,
-  BUFFER_SIZE = 1024,
+  CLIENT_BUFFER_SIZE = 1024,
 };
 
 int parse_http_header(int sock, ...);
 char *page_downloader(const char *hostname, const char *path,
-                      const char *filename);
+                      const int file_status, FILE** rcv_file, ...);
 
 #endif
