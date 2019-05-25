@@ -21,7 +21,8 @@ int parse_http_header(int sock, ...) {
     } else {
       bytes_received = NO_CONTENT_LENGTH;
     }
-    if (buffer_cursor && (buffer_cursor =
+    if (buffer_cursor &&
+        (buffer_cursor =
              strstr(buffer_cursor, "Content-Disposition: attachment"))) {
       /* http header of book file */
       va_list arg_list;
@@ -39,12 +40,12 @@ int parse_http_header(int sock, ...) {
 char *page_downloader(const char *hostname, const char *path,
                       const int file_status, FILE **rcv_file, ...) {
   char buffer[BUFSIZ];
-  char request[CLIENT_BUFFER_SIZE] = { '\0' };
+  char request[CLIENT_BUFFER_SIZE] = {'\0'};
   char request_template[] = "GET /%s HTTP/1.1 \r\nHost: %s\r\n\r\n";
   char filename[255];
   int socketfd;
   struct addrinfo hints, *servinfo, *p;
-  int status, request_len;
+  int status;
   int bytes_received;
 
   memset(&hints, 0, sizeof(hints));
@@ -74,8 +75,8 @@ char *page_downloader(const char *hostname, const char *path,
     perror("connect and socket");
     return error_msg("[ERROR] client.c - failed to connect");
   }
-  request_len =
-      snprintf(request, CLIENT_BUFFER_SIZE, request_template, path, hostname);
+
+  snprintf(request, CLIENT_BUFFER_SIZE, request_template, path, hostname);
   fprintf(stderr, "Request = %s", request);
   if (send(socketfd, request, CLIENT_BUFFER_SIZE, 0) == -1) {
     perror("send");
@@ -92,14 +93,8 @@ char *page_downloader(const char *hostname, const char *path,
     char **book_filename = va_arg(arg_list, char **);
     const long book_fn_len = va_arg(arg_list, const size_t);
     const long catched_fn_len = strlen(filename);
-    char *realloc_fallback; /* read realloc doc*/
-    if ((realloc_fallback =
-             realloc(*book_filename, (book_fn_len + catched_fn_len + 2) *
-                                         sizeof(char))) == NULL) {
-      free(*book_filename);
-      exit_and_report();
-    }
-    *book_filename = realloc_fallback;
+    *book_filename = erealloc(
+        *book_filename, (book_fn_len + catched_fn_len + 2) * sizeof(char));
     strcat(*book_filename, filename);
 
     *rcv_file = fopen(*book_filename, "wb+");

@@ -9,3 +9,4 @@
 void die(const char *errstr, ...);
 
 void *ecalloc(size_t nmemb, size_t size);
+void *erealloc(void *p, size_t size);

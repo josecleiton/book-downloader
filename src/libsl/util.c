@@ -16,6 +16,15 @@ ecalloc(size_t nmemb, size_t size)
 	return p;
 }
 
+void *
+erealloc(void *p, size_t size)
+{
+	if (!(p = realloc(p, size)))
+		die("realloc:");
+
+	return p;
+}
+
 void
 die(const char *fmt, ...) {
 	va_list ap;

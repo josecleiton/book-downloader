@@ -1,3 +1,4 @@
+.POSIX:
 CC = gcc
 CFLAGS = -g -Wall -Wextra -Wcast-align -lm
 SRCS = client.c  error.c  main.c  parse.c  types.c  scbd.c  libsl/util.c
@@ -15,3 +16,17 @@ $(MAIN): $(OBJS)
 
 clean:
 			$(RM) *.o *~ $(MAIN)
+
+PREFIX = /usr/local
+
+install: $(MAIN)
+				 mkdir -p $(DESTDIR)$(PREFIX)/bin
+				 cp -f $(MAIN) $(DESTDIR)$(PREFIX)/bin
+				 chmod 755 $(DESTDIR)$(PREFIX)/bin/$(MAIN)
+				 @echo Please take a look in README and LICENSE files.
+				 @echo Have a nice day
+
+uninstall:
+	rm -f $(DESTDIR)$(PREFIX)/bin/$(MAIN)
+
+.PHONY: all clean install uninstall
