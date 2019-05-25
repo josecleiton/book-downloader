@@ -47,7 +47,7 @@ enum {
 static int MAX_PAGES, MAX_BOOKS_IN_CURR_PAGE;
 
 int render_and_exec(char args[][LOGMSG_SIZE * 2]);
-int download_search_page(const char *pattern, char **log_msg,
+int download_search_page(char *pattern, char **log_msg,
                          struct book_t **books, int *books_len,
                          const int curr_page, uint64_t *cached_pages);
 void download_mirror_page(struct book_t *selected_book, char **log_msg);
@@ -57,7 +57,7 @@ char *download_book(struct book_t *selected_book, char** log_msg);
 void generate_ref(const struct book_t *selected_book, const long book_fn_name);
 
 uint64_t is_cached(const int curr_page, const uint64_t cached_pages);
-void print_cached_pages(uint64_t bitset);
+void print_cached_pages(const uint64_t bitset);
 void split_url(const char* url, char** hostname, char** path);
 void greeting_message(void);
 void help_message(void);

@@ -24,6 +24,10 @@
   #endif
 #endif
 
+#define FOR_BITSET(bs, c)                                                      \
+  for (uint64_t c = 0, _bs = bs; _bs;                                          \
+       _bs ^= (1ULL << c), c = log(LSONE(_bs)) / log(2))
+
 /*
  * least significant one bit of an integer
  * relevant to iterate through struct pages

@@ -52,10 +52,12 @@ void array_book_t_free(BOOK_CONTAINER* book_arr) {
 }
 
 void pages_book_t_free(struct pages* lib) {
-   uint64_t bitset = lib->bitset;
-   for (uint64_t curr_lsone = LSONE(bitset), cursor = 0; bitset;
-        bitset ^= (1ULL << cursor), curr_lsone = LSONE(bitset)) {
-     cursor = log(curr_lsone) / log(2);
-     array_book_t_free(&lib->lib[cursor]);
+   FOR_BITSET(lib->bitset, cursor) {
+      array_book_t_free(&lib->lib[cursor]);
    }
+   /* for (uint64_t curr_lsone = LSONE(bitset), cursor = 0; bitset; */
+   /*      bitset ^= (1ULL << cursor), curr_lsone = LSONE(bitset)) { */
+   /*   cursor = log(curr_lsone) / log(2); */
+   /*   array_book_t_free(&lib->lib[cursor]); */
+   /* } */
 }

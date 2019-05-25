@@ -8,9 +8,9 @@ int render_and_exec(char args[][LOGMSG_SIZE * 2]) {
    pages.bitset = 0u;
    int selected_book, curr_page = 0, status;
    char* log_msg = NULL;
-   bool download_book_page_status = false;
+   int download_book_page_status = 0;
    greeting_message(); /* welcome to scbd etc etc */
-   while (!download_book_page_status) {
+   while (download_book_page_status == 0) {
      /*
       * Passar para a função abaixo:
       * numero maximo de paginas (config.h)
@@ -44,8 +44,11 @@ int render_and_exec(char args[][LOGMSG_SIZE * 2]) {
                 &pages.lib[curr_page].books[selected_book], &log_msg)) == SUCCESS) {
          log_msg = download_book(&pages.lib[curr_page].books[selected_book],
                                  &log_msg);
-          download_book_page_status = true;
+          download_book_page_status = 1;
          /* has been checked inside the function */
+       } else if(download_book_page_status != FAILURE) {
+          download_book_page_status = FAILURE;
+          break;
        }
      } else {
        user_input_arg("Do you want to retry? ",
@@ -54,7 +57,9 @@ int render_and_exec(char args[][LOGMSG_SIZE * 2]) {
        pages_book_t_free(&pages);
      }
    }
-   success_message(log_msg);
+   if(download_book_page_status != FAILURE) {
+      success_message(log_msg);
+   }
    pages_book_t_free(&pages);
    return EXIT_SUCCESS;
 }
@@ -100,7 +105,7 @@ void check_log_msg(char* msg) {
    free(msg);
 }
 
-int download_search_page(const char *pattern, char **log_msg,
+int download_search_page(char *pattern, char **log_msg,
                          struct book_t **books, int *books_len,
                          const int curr_page, uint64_t *cached_pages) {
   int status;
@@ -113,6 +118,12 @@ int download_search_page(const char *pattern, char **log_msg,
     sprintf(extra_args, "&res=%d&page=%d", MAX_BOOKS_PER_PAGE, curr_page + 1);
     char *full_path = (char *)ecalloc(
         strlen(gen_lib_search_path) + strlen(pattern) + EXTRA_ARGS_LEN + 1, sizeof(char));
+
+    for(int i=0; pattern[i]; i += 1) {
+       if(isspace(pattern[i])) {
+          pattern[i] = '+';
+       }
+    }
 
     strcpy(full_path, gen_lib_search_path);
     strcat(full_path, pattern);
@@ -141,15 +152,13 @@ uint64_t is_cached(const int curr_page, const uint64_t cached_pages) {
    return cached_pages & (1ULL << curr_page);
 }
 
-void print_cached_pages(uint64_t bitset) {
+void print_cached_pages(const uint64_t bitset) {
   printf("Cached pages (instant loading): ");
-  for (uint64_t curr_lsone = LSONE(bitset), cursor = 0; bitset;
-       bitset ^= (1ULL << cursor), curr_lsone = LSONE(bitset)) {
-    cursor = log(curr_lsone) / log(2);
-    if (cursor) {
-      printf(", ");
-    }
-    printf("%lu", cursor + 1);
+  FOR_BITSET(bitset, cursor) {
+     if(cursor) {
+        printf(", ");
+     }
+     printf("%lu", cursor + 1);
   }
   putchar('\n');
 }
@@ -357,10 +366,10 @@ int user_input(const char *msg, const char *info, int (*check_input)(char *)) {
   char input[10];
   int choice, i = 0;
   do {
-    printf("\n%s\n>>> ", msg);
     if (i++) {
       puts(info);
     }
+    printf("\n%s\n>>> ", msg);
     scanf("%s", input);
   } while ((choice = check_input(input)) == FAILURE);
   return choice;
@@ -411,7 +420,9 @@ int check_input_search_page(char *in) {
 }
 
 int check_input_book(char* in) {
-   return (*in == 'y' || *in == 'Y') ? SUCCESS : FAILURE;
+  return (*in == 'y' || *in == 'Y')
+             ? SUCCESS
+             : (*in == 'n' || *in == 'N') ? INT_MAX : FAILURE;
 }
 
 char *get_dir(const char *dir, long *len) {
