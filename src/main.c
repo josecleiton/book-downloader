@@ -22,7 +22,7 @@ int main(int argc, char *argv[]) {
     arg_status |= 2;
     break;
   case 's':
-    strcpy(args[0], ARGF());
+    ARGF() ? strcpy(args[0], ARGF()) : usage();
     break;
   case 'v':
     verbose = true;
@@ -33,6 +33,6 @@ int main(int argc, char *argv[]) {
     usage();
   }
   ARGEND;
-  return render_and_exec(args, arg_status);
+  return exec(args, arg_status);
 }
 

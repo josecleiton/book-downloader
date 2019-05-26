@@ -48,7 +48,7 @@ enum {
   ARG_LEN = 3,
 };
 
-int render_and_exec(char args[][LOGMSG_SIZE * 2], const int arg_status);
+int exec(char args[][LOGMSG_SIZE * 2], const int arg_status);
 int download_search_page(char *pattern, char **log_msg, struct book_t **books,
                          int *books_len, const int curr_page,
                          uint64_t *cached_pages);

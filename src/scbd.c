@@ -4,7 +4,10 @@ static int MAX_PAGES = INT_MAX;
 static int MAX_BOOKS_IN_CURR_PAGE = INT_MAX;
 static char *local_save_dir = NULL, *local_save_ref_dir = NULL;
 
-int render_and_exec(char args[][LOGMSG_SIZE * 2], const int arg_status) {
+int exec(char args[][LOGMSG_SIZE * 2], const int arg_status) {
+  if(! *args[SEARCH_PATTERN]) {
+     usage();
+  }
   struct pages pages;
   memset(&pages, 0, sizeof(struct pages));
   int selected_book, curr_page = 0, status;
