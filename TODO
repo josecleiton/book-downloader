@@ -1,10 +1,10 @@
-Pegar a página html de busca a partir da entrada do usuário ! DONE
-Buscar nessa página html a tabela com os resultados da pesquisa ! DONE
-Montar uma representação dessa tabela na stdout
-Aceitar a entrada do usuário [1..n] como seleção na tabela anterior ! DONE
-Baixar a pagina html da seleção (feita anteriormente) ! DONE
-Buscar nessa nova pagina html um link com o children "GET" e href com extensão pdf ! DONE
-Buscar nesta pagina as informacoes se referencia do livro/artigo ! DONE
-Ler as configuracoes do usuario sobre referencias ! DONE
-Se tiver configurado, salve um arquivo .bib no diretorio desejado
-Baixar o pdf para o diretório especificado pelo usuário no config.h ! DONE
+Pegar a página html de busca a partir da entrada do usuário ! CONCLUDO
+Buscar nessa página html a tabela com os resultados da pesquisa ! CONCLUÍDO
+Montar uma representação dessa tabela na stdout ! CONCLUÍDO
+Aceitar a entrada do usuário [1..n] como seleção na tabela anterior ! CONCLUDO
+Baixar a pagina html da seleção (feita anteriormente) ! CONCLUÍDO
+Buscar nessa nova pagina html um link com o children "GET" e href com extensão pdf ! CONCLUDO
+Buscar nesta pagina as informacoes se referencia do livro/artigo ! CONCLUDO
+Ler as configuracoes do usuario sobre referencias ! CONCLUDO
+Se tiver configurado, salve um arquivo .bib no diretorio desejado ! CONCLUÍDO
+Baixar o pdf para o diretório especificado pelo usuário no config.h ! CONCLUÍDO
