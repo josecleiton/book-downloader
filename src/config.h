@@ -8,10 +8,10 @@
  */
 
 /* where the books will stay */
-static const char save_dir[] = "/home/josec/.cache/scbd";
+static const char save_dir[] = "~/.cache/scbd";
 
 /* where the .bib will stay */
-static const char save_ref_dir[] = "/home/josec/.cache/scbd";
+static const char save_ref_dir[] = "~/.cache/scbd";
 
 /* library genesis address */
 static const char gen_lib[] = "gen.lib.rus.ec";

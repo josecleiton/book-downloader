@@ -4,17 +4,16 @@ static int MAX_PAGES = INT_MAX;
 static int MAX_BOOKS_IN_CURR_PAGE = INT_MAX;
 static char *local_save_dir = NULL, *local_save_ref_dir = NULL;
 
-int exec(char args[][LOGMSG_SIZE * 2], const int arg_status) {
-  if(! *args[SEARCH_PATTERN]) {
-     usage();
-  }
+int exec(char *args[], const int arg_status) {
+  if (!(args[SEARCH_PATTERN]))
+    usage();
   struct pages pages;
   memset(&pages, 0, sizeof(struct pages));
-  int selected_book, curr_page = 0, status;
+  int selected_book = FAILURE, curr_page = 0, status;
   char *log_msg = NULL;
   int download_book_page_status = 0;
-  greeting_message(); /* welcome to scbd etc etc */
-  while (download_book_page_status == 0) {
+  while (!download_book_page_status) {
+    greeting_message(); /* welcome to scbd etc etc */
     status = download_search_page(
         args[SEARCH_PATTERN], &log_msg, &pages.lib[curr_page].books,
         &pages.lib[curr_page].size, curr_page, &pages.bitset);
@@ -27,17 +26,12 @@ int exec(char args[][LOGMSG_SIZE * 2], const int arg_status) {
         pages_book_t_free(&pages);
         return EXIT_SUCCESS;
       } else if (selected_book < FAILURE) {
-         /*
-          * page return a number between [-n, -2]
-          * convert it to an array index
-          */
-         curr_page = -(selected_book + 1) - 1;
-         continue;
+        CLEAR; /* page return a number between [-n, -2] */
+        curr_page = -(selected_book + 1) - 1; /* then convert it to an array */
+        continue;
       }
-
       download_mirror_page(&pages.lib[curr_page].books[selected_book],
                            &log_msg);
-
       /* first download the book page in gen lib then download the document it
        * self */
       if ((download_book_page_status =
@@ -59,9 +53,8 @@ int exec(char args[][LOGMSG_SIZE * 2], const int arg_status) {
       pages_book_t_free(&pages);
     }
   }
-  if (download_book_page_status != FAILURE) {
+  if (download_book_page_status != FAILURE)
     success_message(log_msg);
-  }
   pages_book_t_free(&pages);
   return EXIT_SUCCESS;
 }
@@ -118,6 +111,7 @@ int download_search_page(char *pattern, char **log_msg, struct book_t **books,
                          int *books_len, const int curr_page,
                          uint64_t *cached_pages) {
   int status;
+  printf("\nSearch pattern: %s\n", pattern);
   if (is_cached(curr_page, *cached_pages)) {
     status = SUCCESS;
   } else {
@@ -129,22 +123,19 @@ int download_search_page(char *pattern, char **log_msg, struct book_t **books,
                                           strlen(pattern) + EXTRA_ARGS_LEN + 1,
                                       sizeof(char));
 
-    for (int cursor = 0; pattern[cursor]; cursor += 1) {
-      if (isspace(pattern[cursor])) {
+    /* replace the spaces for '+' to search with http */
+    for (int cursor = 0; pattern[cursor]; cursor += 1)
+      if (isspace(pattern[cursor]))
         pattern[cursor] = '+';
-      }
-    }
 
-    strcpy(full_path, gen_lib_search_path);
-    strcat(full_path, pattern);
-    strcat(full_path, extra_args);
+    sprintf(full_path, "%s%s%s", gen_lib_search_path, pattern, extra_args);
     /* Create a tmpfile for the html page */
     *log_msg = page_downloader(gen_lib, full_path, TMP_FILE, &rcvd_file);
     free(full_path);
     check_log_msg(*log_msg);
 
     *log_msg = search_page(rcvd_file, books, books_len, &status, &MAX_PAGES);
-    if (curr_page == 0) {
+    if (!curr_page) {
       MAX_PAGES = MIN(MAX_PAGES, (int)sizeof(uint64_t) * 8);
       *books_len = MIN(*books_len, MAX_BOOKS_PER_PAGE);
     }
@@ -154,6 +145,10 @@ int download_search_page(char *pattern, char **log_msg, struct book_t **books,
 
   print_table_of_books(*books, *books_len, curr_page, status);
   print_cached_pages(*cached_pages);
+  /* replace the '+' for to show in terminal */
+  for (int cursor = 0; pattern[cursor]; cursor += 1)
+    if (pattern[cursor] == '+')
+      pattern[cursor] = ' ';
   return status;
 }
 
@@ -164,9 +159,8 @@ uint64_t is_cached(const int curr_page, const uint64_t cached_pages) {
 void print_cached_pages(const uint64_t bitset) {
   printf("Cached pages (instant loading): ");
   FOR_BITSET(bitset, cursor) {
-    if (cursor) {
+    if (cursor)
       printf(", ");
-    }
     printf("%lu", cursor + 1);
   }
   putchar('\n');
@@ -203,26 +197,25 @@ char *download_book(struct book_t *selected_book, char **log_msg,
                     const int arg_status, ...) {
   FILE *rcvd_file = NULL;
   long book_filename_len;
-  if(arg_status) {
-     va_list args;
-     va_start(args, arg_status);
-     local_save_ref_dir = va_arg(args, char*);
-     local_save_dir = va_arg(args, char*);
-     if(!(arg_status & 1)) {
-        local_save_ref_dir = (char*) save_ref_dir;
-     }
-     if(!(arg_status & 2)) {
-        local_save_dir = (char*) save_dir;
-     }
-     va_end(args);
+  if (arg_status) {
+    va_list args;
+    va_start(args, arg_status);
+    local_save_ref_dir = va_arg(args, char *);
+    local_save_dir = va_arg(args, char *);
+    if (!(arg_status & 1))
+      local_save_ref_dir = (char *)save_ref_dir;
+    if (!(arg_status & 2))
+      local_save_dir = (char *)save_dir;
+    va_end(args);
   } else {
-     local_save_dir = (char*) save_dir;
-     local_save_ref_dir = (char*) save_ref_dir;
+    local_save_dir = (char *)save_dir;
+    local_save_ref_dir = (char *)save_ref_dir;
   }
 
   selected_book->path = get_dir(local_save_dir, &book_filename_len);
   char *hostname, *path;
-  int mkdir_status = mkdir(local_save_dir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+  int mkdir_status =
+      mkdir(local_save_dir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
   if (mkdir_status == ENOTDIR || mkdir_status == ENAMETOOLONG) {
     die("save_dir variable not configured properly.");
   }
@@ -236,45 +229,49 @@ char *download_book(struct book_t *selected_book, char **log_msg,
   return *log_msg;
 }
 
-void generate_ref(const struct book_t *selected_book, const long start_book_fn) {
+void generate_ref(const struct book_t *selected_book,
+                  const long start_book_fn) {
   if (local_save_dir && *local_save_ref_dir) {
     long ref_dir_len;
-    int mkdir_status =
-        mkdir(local_save_ref_dir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-    if (mkdir_status == ENOTDIR || mkdir_status == ENAMETOOLONG) {
-      die("save_ref_dir variable not configured properly.");
-    }
     char *ref_dir = get_dir(local_save_ref_dir, &ref_dir_len);
+    int mkdir_status = mkdir(ref_dir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    if (mkdir_status == ENOTDIR || mkdir_status == ENAMETOOLONG)
+      die("save_ref_dir variable not configured properly.");
     const long book_path_len = strlen(selected_book->path);
-    char *ref_filename =
-        ecalloc((book_path_len - start_book_fn + 4) + ref_dir_len, sizeof(char));
-    strcpy(ref_filename, ref_dir);
-    strcat(ref_filename, selected_book->path + start_book_fn);
+    char *ref_filename = ecalloc(
+        (book_path_len - start_book_fn + 4) + ref_dir_len, sizeof(char));
+    sprintf(ref_filename, "%s%s", ref_dir, selected_book->path + start_book_fn);
     strcpy(strrchr(ref_filename, '.') + 1, "bib");
 
     FILE *ref_file = efopen(ref_filename, "wb+");
     free(ref_dir);
     free(ref_filename);
-    fprintf(ref_file, "@book{book:%s,\n", selected_book->id);
-    fprintf(ref_file, "%-16s{%s},\n", "title = ", selected_book->title);
-    fprintf(ref_file, "%-16s{%s},\n", "author =", selected_book->authors);
-    fprintf(ref_file, "%-16s{%s},\n", "publisher =",
-            selected_book->publisher ? selected_book->publisher : "");
-    fprintf(ref_file, "%-16s{%s},\n",
-            "isbn =", selected_book->isbn ? selected_book->isbn : "");
-    fprintf(ref_file, "%-16s{%s},\n", "year =", selected_book->year);
-    fprintf(ref_file, "%-16s{%s},\n",
-            "series =", selected_book->series ? selected_book->series : "");
-    fprintf(ref_file, "%-16s{%s},\n",
-            "edition =", selected_book->edition ? selected_book->series : "");
-    fprintf(ref_file, "%-16s{%s},\n",
-            "volume =", selected_book->volume ? selected_book->volume : "");
-    fprintf(ref_file, "%-16s{%s}\n}\n", "url =", selected_book->url);
 
+    fprintf(ref_file,
+            "@book{book:%s,\n"
+            "%-16s{%s},\n"
+            "%-16s{%s},\n"
+            "%-16s{%s},\n"
+            "%-16s{%s},\n"
+            "%-16s{%s},\n"
+            "%-16s{%s},\n"
+            "%-16s{%s},\n"
+            "%-16s{%s},\n"
+            "%-16s{%s}\n}\n",
+            selected_book->id, "title =", selected_book->title,
+            "author =", selected_book->authors, "publisher =",
+            selected_book->publisher ? selected_book->publisher : "",
+            "isbn =", selected_book->isbn ? selected_book->isbn : "",
+            "year =", selected_book->year,
+            "series =", selected_book->series ? selected_book->series : "",
+            "edition =", selected_book->edition ? selected_book->edition : "",
+            "volume =", selected_book->volume ? selected_book->volume : "",
+            "url =", selected_book->url);
     fclose(ref_file);
-  } else {
-    fprintf(stderr, "\n[WARNING] save_ref_dir variable not set nor -b argument used.\n");
-  }
+  } else
+    fprintf(
+        stderr,
+        "\n[WARNING] save_ref_dir variable not set nor -b argument used.\n");
 }
 
 void split_url(const char *url, char **hostname, char **path) {
@@ -460,12 +457,22 @@ int check_input_book(char *in) {
              : (*in == 'n' || *in == 'N') ? INT_MAX : FAILURE;
 }
 
-char *get_dir(const char *dir, long *len) {
+char *get_dir(char *dir, long *len) {
   long dir_len = strlen(dir);
-  char *new_dir = (char *)ecalloc(dir_len + 2, sizeof(char));
-  strcpy(new_dir, dir);
+  char *new_dir = NULL;
+  char *home_dir = NULL;
+  if (*dir == '~') {
+    home_dir = getenv(HOMEPATH);
+    dir_len += strlen(home_dir) - 1;
+    dir += 1;
+  }
+  new_dir = (char *)ecalloc(dir_len + 3, sizeof(char));
+  if (home_dir) {
+    strcpy(new_dir, home_dir);
+  }
+  strcat(new_dir, dir);
   char *last_slash = strrchr(dir, '/');
-  if ((last_slash - dir + 1) != dir_len) {
+  if (!last_slash || (last_slash - dir + 1) != dir_len) {
     new_dir[dir_len] = '/';
     dir_len += 1;
   }

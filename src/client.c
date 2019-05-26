@@ -71,14 +71,14 @@ char *page_downloader(const char *hostname, const char *path,
     }
     break;
   }
-  if (p == NULL) {
+  if (!p) {
     perror("connect and socket");
     return error_msg("[ERROR] client.c - failed to connect");
   }
 
   snprintf(request, CLIENT_BUFFER_SIZE, request_template, path, hostname);
-  if(verbose) {
-     fprintf(stderr, "Request = %s", request);
+  if (verbose) {
+    fprintf(stderr, "Request = %s", request);
   }
   if (send(socketfd, request, CLIENT_BUFFER_SIZE, 0) == -1) {
     perror("send");
@@ -103,9 +103,8 @@ char *page_downloader(const char *hostname, const char *path,
     va_end(arg_list);
   }
   /* *rcv_file must be "free" in sncbd.c */
-  if (*rcv_file == NULL) {
+  if (!(*rcv_file))
     return error_msg("[ERROR] client.c - failed to open file");
-  }
   int bytes = 0;
   /* receive bytes from server and output it in rcv_file stream */
   while ((bytes_received = recv(socketfd, buffer, BUFSIZ, 0))) {
@@ -118,8 +117,8 @@ char *page_downloader(const char *hostname, const char *path,
     if (content_length != NO_CONTENT_LENGTH && bytes >= content_length)
       break;
   }
-  if(verbose) {
-     fprintf(stderr, "Bytes received = %d\n", bytes);
+  if (verbose) {
+    fprintf(stderr, "Bytes received = %d\n", bytes);
   }
   fflush(*rcv_file);
   /* free in sncbd.c */

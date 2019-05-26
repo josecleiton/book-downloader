@@ -15,9 +15,11 @@
 #include <sys/stat.h>
 
 #if __unix__ || __APPLE__
-   #define CLEAR system("clear")
+#define CLEAR system("clear")
+#define HOMEPATH "HOME"
 #elif __WIN32 || __WIN64
-   #define CLEAR system("cls")
+#define CLEAR system("cls")
+#define HOMEPATH "HOMEPATH"
 #endif
 
 #define CONST_ARR_LEN(a) (sizeof(a) / sizeof(*a))
@@ -48,7 +50,7 @@ enum {
   ARG_LEN = 3,
 };
 
-int exec(char args[][LOGMSG_SIZE * 2], const int arg_status);
+int exec(char *args[], const int arg_status);
 int download_search_page(char *pattern, char **log_msg, struct book_t **books,
                          int *books_len, const int curr_page,
                          uint64_t *cached_pages);
@@ -72,7 +74,7 @@ void print_table_of_books(struct book_t *array, const int array_len,
 void draw_book_column(char *text, const size_t len);
 void print_more_info(struct book_t *selected_book);
 void check_log_msg(char *msg);
-char *get_dir(const char *dir, long *len);
+char *get_dir(char *dir, long *len);
 
 int user_input(const char *msg, const char *info, int (*check_input)(char *in));
 int user_input_arg(const char *msg, const char *info, char *container);

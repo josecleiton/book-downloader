@@ -9,6 +9,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define TEST_STR(s) if(!s) return FAILURE
+
 /* PARSE GEN LIB RUS EC HTML PAGES */
 
 enum {
