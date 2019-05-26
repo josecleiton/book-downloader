@@ -32,7 +32,6 @@ char *search_page(FILE *page_file, struct book_t **book_array,
 char *book_page(FILE *page_file, struct book_t *selected_book);
 char *mirror_page(FILE *page_file, struct book_t *selected_book);
 
-FILE *open_file(const char *filename);
 void format_file(FILE *stream, register char *buffer);
 int handle_td_element(const char *buffer, const int buffer_len,
                       struct book_t *book, const int which_td);

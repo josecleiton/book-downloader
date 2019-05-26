@@ -14,6 +14,12 @@
 #include <string.h>
 #include <sys/stat.h>
 
+#if __unix__ || __APPLE__
+   #define CLEAR system("clear")
+#elif __WIN32 || __WIN64
+   #define CLEAR system("cls")
+#endif
+
 #define CONST_ARR_LEN(a) (sizeof(a) / sizeof(*a))
 #define strcenter(str, col, len)                                               \
   ((int)(col + len / 2)), str, ((int)(col - len / 2)), ""
@@ -42,19 +48,22 @@ enum {
   ARG_LEN = 3,
 };
 
-int render_and_exec(char args[][LOGMSG_SIZE * 2]);
+int render_and_exec(char args[][LOGMSG_SIZE * 2], const int arg_status);
 int download_search_page(char *pattern, char **log_msg, struct book_t **books,
                          int *books_len, const int curr_page,
                          uint64_t *cached_pages);
 void download_mirror_page(struct book_t *selected_book, char **log_msg);
 bool download_book_page(struct book_t *selected_book, char **log_msg);
-char *download_book(struct book_t *selected_book, char **log_msg);
+char *download_book(struct book_t *selected_book, char **log_msg,
+                    const int arg_status, ...);
 
 void generate_ref(const struct book_t *selected_book, const long book_fn_name);
 
 uint64_t is_cached(const int curr_page, const uint64_t cached_pages);
 void print_cached_pages(const uint64_t bitset);
 void split_url(const char *url, char **hostname, char **path);
+
+void logo(void);
 void greeting_message(void);
 void help_message(void);
 void success_message(char *msg);

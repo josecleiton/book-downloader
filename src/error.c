@@ -1,5 +1,7 @@
 #include "error.h"
 
+bool verbose = false;
+
 char *error_msg(const char *msg) {
   size_t result_size = 128 + strlen(msg);
   char *result = (char *)malloc(result_size * sizeof(char));

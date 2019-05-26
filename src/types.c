@@ -45,8 +45,8 @@ void book_t_free(const struct book_t *book) {
 }
 
 void array_book_t_free(BOOK_CONTAINER *book_arr) {
-  for (int i = 0; i < book_arr->size; i += 1) {
-    book_t_free(&book_arr->books[i]);
+  for (int curr_book = 0; curr_book < book_arr->size; curr_book += 1) {
+    book_t_free(&book_arr->books[curr_book]);
   }
   free(book_arr->books);
 }

@@ -1,5 +1,6 @@
 /* See LICENSE file for copyright and license details. */
 
+#include <stdio.h>
 #include <stddef.h>
 
 #define MAX(A, B)               ((A) > (B) ? (A) : (B))
@@ -10,3 +11,4 @@ void die(const char *errstr, ...);
 
 void *ecalloc(size_t nmemb, size_t size);
 void *erealloc(void *p, size_t size);
+FILE *efopen(const char *restrict filename, const char *restrict mode);

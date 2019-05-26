@@ -25,6 +25,15 @@ erealloc(void *p, size_t size)
 	return p;
 }
 
+FILE*
+efopen(const char *restrict filename, const char *restrict mode ) {
+	FILE* f;
+	if(!(f = fopen(filename, mode))) {
+		die("fopen:");
+	}
+	return f;
+}
+
 void
 die(const char *fmt, ...) {
 	va_list ap;

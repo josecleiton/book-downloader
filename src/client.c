@@ -77,7 +77,9 @@ char *page_downloader(const char *hostname, const char *path,
   }
 
   snprintf(request, CLIENT_BUFFER_SIZE, request_template, path, hostname);
-  fprintf(stderr, "Request = %s", request);
+  if(verbose) {
+     fprintf(stderr, "Request = %s", request);
+  }
   if (send(socketfd, request, CLIENT_BUFFER_SIZE, 0) == -1) {
     perror("send");
     return error_msg("[ERROR] client.c - send failed");
@@ -97,7 +99,7 @@ char *page_downloader(const char *hostname, const char *path,
         *book_filename, (book_fn_len + catched_fn_len + 2) * sizeof(char));
     strcat(*book_filename, filename);
 
-    *rcv_file = fopen(*book_filename, "wb+");
+    *rcv_file = efopen(*book_filename, "wb+");
     va_end(arg_list);
   }
   /* *rcv_file must be "free" in sncbd.c */
@@ -115,6 +117,9 @@ char *page_downloader(const char *hostname, const char *path,
     bytes += bytes_received;
     if (content_length != NO_CONTENT_LENGTH && bytes >= content_length)
       break;
+  }
+  if(verbose) {
+     fprintf(stderr, "Bytes received = %d\n", bytes);
   }
   fflush(*rcv_file);
   /* free in sncbd.c */
