@@ -4,12 +4,13 @@
 #include "error.h"
 #include "types.h"
 #include <ctype.h>
+#include <limits.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#define TEST_STR(s) if(!s) return FAILURE
+#define TEST_STR_PTR(s) if(!s) return FAILURE
 
 /* PARSE GEN LIB RUS EC HTML PAGES */
 

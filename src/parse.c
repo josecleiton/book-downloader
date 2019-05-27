@@ -22,7 +22,7 @@ int handle_td_element(const char *buffer, const int buffer_len,
     int authors_count = 0;
     book->authors = ecalloc(1, max_authors_len);
     while ((match = strstr(buffer, "author"))) {
-      TEST_STR(match);
+      TEST_STR_PTR(match);
       if (authors_len > max_authors_len) {
         book->authors = (char *)erealloc(book->authors, max_authors_len * 2);
         max_authors_len *= 2;
@@ -32,10 +32,10 @@ int handle_td_element(const char *buffer, const int buffer_len,
         book->authors[authors_len++] = ' ';
       }
       match = strchr(match, '>');
-      TEST_STR(match);
+      TEST_STR_PTR(match);
       match += 1;
       char *close_tag = strchr(match, '<');
-      TEST_STR(match);
+      TEST_STR_PTR(match);
       *close_tag = '\0';
       for (int cursor = 0; match[cursor]; cursor += 1, authors_len += 1) {
         book->authors[authors_len] = match[cursor];
@@ -51,27 +51,25 @@ int handle_td_element(const char *buffer, const int buffer_len,
   } else if (which_td == BOOK_TITLE) {
     /* search for the book's url and it's title */
     match = strstr(buffer, "book");
-    TEST_STR(match);
+    TEST_STR_PTR(match);
     char *close_tag = strchr(match, '\'');
     *close_tag = '\0';
     book->url = (char *)ecalloc(close_tag - match + 2, sizeof(char));
     strcpy(book->url, match);
-    /* puts(book->url); */
 
     match = strchr(close_tag + 1, '>');
-    TEST_STR(match);
+    TEST_STR_PTR(match);
     match += 1;
     close_tag = strchr(match, '<');
-    TEST_STR(match);
+    TEST_STR_PTR(match);
     *close_tag = '\0';
     book->title = (char *)ecalloc(close_tag - match + 2, sizeof(char));
     strcpy(book->title, match);
-    /* puts(book->title); */
 
   } else if (which_td == BOOK_YEAR) {
     /* just jump the nowrap parameter */
     match = strchr(buffer, '>');
-    TEST_STR(match);
+    TEST_STR_PTR(match);
     match += 1;
     book->year = (char *)ecalloc(buffer_len - (match - buffer), sizeof(char));
     strcpy(book->year, match);
@@ -86,13 +84,13 @@ int handle_td_element(const char *buffer, const int buffer_len,
     strcpy(book->lang, buffer);
   } else if (which_td == BOOK_SIZE) {
     match = strchr(buffer, '>');
-    TEST_STR(match);
+    TEST_STR_PTR(match);
     match += 1;
     book->size = (char *)ecalloc(buffer_len - (match - buffer), sizeof(char));
     strcpy(book->size, match);
   } else {
     match = strchr(buffer, '>');
-    TEST_STR(match);
+    TEST_STR_PTR(match);
     match += 1;
     book->ext = (char *)ecalloc(buffer_len - (match - buffer), sizeof(char));
     strcpy(book->ext, match);
@@ -170,9 +168,8 @@ char *search_page(FILE *page_file, struct book_t **book_array,
             *close_td = '\0';
             if ((*status = handle_td_element(
                      match_cursor, close_td - match_cursor + 1,
-                     &books[book_count], STATE + 1)) == FAILURE) {
+                     &books[book_count], STATE + 1)) == FAILURE)
               goto STATUS_CHECK;
-            }
 
             match_cursor = buffer_cursor = close_td + 1;
             STATE += 1;
@@ -182,13 +179,12 @@ char *search_page(FILE *page_file, struct book_t **book_array,
             }
           }
         } else {
-          if (STATE == FAILURE && book_count == 0) {
+          if (STATE == FAILURE && !book_count)
             return error_msg("[ERROR] parse.c - BOOK NOT FOUND");
-          } else {
+          else {
           STATUS_CHECK:
-            if (book_count == 0) {
+            if (!book_count)
               return error_msg("[ERROR] parse.c - HTTP REQUEST #4");
-            }
             book_td_parse_finalized = true;
             break;
           }
@@ -197,18 +193,15 @@ char *search_page(FILE *page_file, struct book_t **book_array,
     }
     /*book_t_print(&books[book_count]); */
     /* scanf("%*c"); */
-    if (book_td_parse_finalized) {
+    if (book_td_parse_finalized)
       break;
-    }
     book_count += 1;
   }
 
   *book_array_len = book_count;
-  if (*max_pages_in_search == FAILURE) {
-    if ((*max_pages_in_search = get_max_pages(match_cursor)) == FAILURE) {
-      return error_msg("[ERROR] parse.c - HTTP REQUEST #5");
-    }
-  }
+  if (*max_pages_in_search == INT_MAX &&
+      ((*max_pages_in_search = get_max_pages(match_cursor)) == FAILURE))
+    return error_msg("[ERROR] parse.c - HTTP REQUEST #5");
 
   /* null in beginning as "return 0" */
   char *log_msg = ecalloc(1, sizeof(char));
@@ -275,9 +268,8 @@ char *book_page(FILE *page_file, struct book_t *selected_book) {
         strcpy(selected_book->description, match);
       }
       buffer_cursor = close_tag + 1;
-    } else if (curr_pattern == 0) {
+    } else if (!curr_pattern)
       return error_msg("[ERROR] parse.c - HTTP REQUEST #5");
-    }
   }
   char *log_msg = ecalloc(1, sizeof(char));
   /* post rotines */
@@ -336,9 +328,8 @@ char *mirror_page(FILE *page_file, struct book_t *selected_book) {
             selected_book->url, (close_tag - match + 1) * sizeof(char));
         strcpy(selected_book->url, match);
       }
-    } else {
+    } else
       return error_msg("[ERROR] parse.c - HTTP REQUEST #6");
-    }
     buffer_cursor = close_tag + 1;
   }
 
@@ -349,18 +340,19 @@ char *mirror_page(FILE *page_file, struct book_t *selected_book) {
 
 int get_max_pages(const char *buffer) {
   char *match_cursor = strstr(buffer, "new Paginator");
-  TEST_STR(match_cursor);
+  TEST_STR_PTR(match_cursor);
   for (int comma = 0; comma < 3; comma += 1) {
     match_cursor = strchr(match_cursor, ',') + 1;
-    TEST_STR(match_cursor);
+    TEST_STR_PTR(match_cursor);
   }
   int ans;
   char *close_tag = match_cursor;
   *close_tag = '\0';
-  while (*match_cursor != ' ') {
+  while (*match_cursor != ' ')
     match_cursor -= 1;
-  }
   sscanf(match_cursor, "%d", &ans);
+  if (verbose)
+    printf("Max pages: %d\n", ans);
   return ans;
 }
 

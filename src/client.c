@@ -18,9 +18,8 @@ int parse_http_header(int sock, ...) {
   if (bytes_received) {
     if ((buffer_cursor = strstr(buffer_cursor, "Content-Length:"))) {
       sscanf(buffer_cursor, "%*s %d", &bytes_received);
-    } else {
+    } else
       bytes_received = NO_CONTENT_LENGTH;
-    }
     if (buffer_cursor &&
         (buffer_cursor =
              strstr(buffer_cursor, "Content-Disposition: attachment"))) {
@@ -62,13 +61,11 @@ char *page_downloader(const char *hostname, const char *path,
   /* search by valid socket */
   for (p = servinfo; p != NULL; p = p->ai_next) {
     if ((socketfd = socket(servinfo->ai_family, servinfo->ai_socktype,
-                           servinfo->ai_protocol)) == -1) {
+                           servinfo->ai_protocol)) == -1)
       continue;
-    }
-    if (connect(socketfd, servinfo->ai_addr, servinfo->ai_addrlen) == -1) {
+    if (connect(socketfd, servinfo->ai_addr, servinfo->ai_addrlen) == -1)
       close(socketfd);
-      continue;
-    }
+    continue;
     break;
   }
   if (!p) {
@@ -77,9 +74,8 @@ char *page_downloader(const char *hostname, const char *path,
   }
 
   snprintf(request, CLIENT_BUFFER_SIZE, request_template, path, hostname);
-  if (verbose) {
+  if (verbose)
     fprintf(stderr, "Request = %s", request);
-  }
   if (send(socketfd, request, CLIENT_BUFFER_SIZE, 0) == -1) {
     perror("send");
     return error_msg("[ERROR] client.c - send failed");
@@ -117,9 +113,8 @@ char *page_downloader(const char *hostname, const char *path,
     if (content_length != NO_CONTENT_LENGTH && bytes >= content_length)
       break;
   }
-  if (verbose) {
+  if (verbose)
     fprintf(stderr, "Bytes received = %d\n", bytes);
-  }
   fflush(*rcv_file);
   /* free in sncbd.c */
   char *log_msg = (char *)ecalloc(LOGMSG_SIZE, sizeof(char));
