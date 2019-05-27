@@ -90,8 +90,9 @@ void help_message(void) {
       "\t%-16s Set the string search (usually author/book name)\n\n" //-s
       "Optional arguments:\n"
       "\t%-16s Show this help message\n"
-      "\t%-16s Set another sort order\n"
-      "\t%-16s Set another sort mode (ASC[endant] | DESC[endant])\n"
+      "\t%-16s Set another sort order { id | author | title | publisher | year "
+      "| pages | filesize | extension }\n"
+      "\t%-16s Set another sort mode { ASC[endant] | DESC[endant] }\n"
       "\t%-16s Set another reference folder (where .bib will be downloaded)\n"
       "\t%-16s Set another book folder\n"
       "\t%-16s Verbose mode\n\n",

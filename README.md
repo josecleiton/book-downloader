@@ -23,9 +23,9 @@ Optional arguments:
 
         -h               Show this help message
 
-        -o               Set another sort order
+        -o               Set another sort order { id | author | title | publisher | year | pages | filesize | extension }
 
-        -h               Set another sort mode (ASC[endant] | DESC[endant])
+        -h               Set another sort mode { ASC[endant] | DESC[endant] }
 
         -b               Set another reference folder (where .bib will be downloaded)
 
