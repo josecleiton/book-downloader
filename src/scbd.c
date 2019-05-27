@@ -5,7 +5,7 @@ static int MAX_BOOKS_IN_CURR_PAGE = INT_MAX;
 static char *local_save_dir = NULL, *local_save_ref_dir = NULL;
 
 int exec(char *args[], const int arg_status) {
-  if (!(args[SEARCH_PATTERN]))
+  if (!args[SEARCH_PATTERN])
     usage();
   struct pages pages;
   memset(&pages, 0, sizeof(struct pages));
@@ -23,8 +23,8 @@ int exec(char *args[], const int arg_status) {
                "Select a book [1 - n] or [p|P]age [1 - n] ([q|Q|0] to exit)",
                "Input a number to pick a book or p[NUM] to jump to NUM page",
                check_input_search_page)) == SUCCESS) {
-        pages_book_t_free(&pages);
-        return EXIT_SUCCESS;
+        download_book_page_status = FAILURE;
+        break;
       } else if (selected_book < FAILURE) {
         CLEAR; /* page return a number between [-n, -2] */
         curr_page = -(selected_book + 1) - 1; /* then convert it to an array */
@@ -43,10 +43,8 @@ int exec(char *args[], const int arg_status) {
                           arg_status, args[BOOK_BIB_PATH], args[BOOK_PATH]);
         download_book_page_status = 1;
         /* has been checked inside the function */
-      } else if (download_book_page_status != FAILURE) {
+      } else if (download_book_page_status != FAILURE)
         download_book_page_status = FAILURE;
-        break;
-      }
     } else {
       user_input_arg("Do you want to retry? ",
                      "Input a search string or [n]o to quit.",
@@ -412,7 +410,7 @@ int user_input_arg(const char *msg, const char *info, char *container) {
   int error = 0;
   printf("\n%s\n>>> ", msg);
   do {
-    if (error++) 
+    if (error++)
       puts(info);
     scanf("%s", container);
     container_len = strlen(container);
@@ -441,7 +439,7 @@ int check_input_search_page(char *in) {
     ans = (ans <= MAX_PAGES) ? (-ans - 1) : FAILURE;
   else if (*in == 'q' || *in == 'Q' || ans == 0)
     ans = EXIT_SUCCESS;
-  else if(ans > MAX_BOOKS_IN_CURR_PAGE)
+  else if (ans > MAX_BOOKS_IN_CURR_PAGE)
     ans = FAILURE;
   return ans;
 }
