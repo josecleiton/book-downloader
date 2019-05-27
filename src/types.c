@@ -7,7 +7,6 @@ void bookt_t_print(struct book_t *book) {
          book->lang, book->size, book->ext);
 }
 
-/* kai */
 void book_t_free(const struct book_t *book) {
   free(book->title);
   free(book->url);
@@ -18,36 +17,27 @@ void book_t_free(const struct book_t *book) {
   free(book->lang);
   free(book->size);
   free(book->ext);
-  if (book->edition) {
+  if (book->edition)
     free(book->edition);
-  }
-  if (book->id) {
+  if (book->id)
     free(book->id);
-  }
-  if (book->isbn) {
+  if (book->isbn)
     free(book->isbn);
-  }
-  if (book->series) {
+  if (book->series)
     free(book->series);
-  }
-  if (book->volume) {
+  if (book->volume)
     free(book->volume);
-  }
-  if (book->description) {
+  if (book->description)
     free(book->description);
-  }
-  if (book->download_url) {
+  if (book->download_url)
     free(book->download_url);
-  }
-  if (book->path) {
+  if (book->path)
     free(book->path);
-  }
 }
 
 void array_book_t_free(BOOK_CONTAINER *book_arr) {
-  for (int curr_book = 0; curr_book < book_arr->size; curr_book += 1) {
+  for (int curr_book = 0; curr_book < book_arr->size; curr_book += 1)
     book_t_free(&book_arr->books[curr_book]);
-  }
   free(book_arr->books);
 }
 

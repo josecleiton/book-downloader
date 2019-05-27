@@ -4,9 +4,8 @@ int parse_http_header(int sock, ...) {
   char buff[CLIENT_BUFFER_SIZE] = "", *buffer_cursor = buff + 4;
   int bytes_received;
   while ((bytes_received = recv(sock, buffer_cursor, 1, 0))) {
-    if (bytes_received == -1) {
-      exit_and_report();
-    }
+    if (bytes_received == -1)
+      die("client.c - parse_http_header:");
     if ((buffer_cursor[-3] == '\r') && (buffer_cursor[-2] == '\n') &&
         (buffer_cursor[-1] == '\r') && (*buffer_cursor == '\n'))
       break;
@@ -42,6 +41,7 @@ char *page_downloader(const char *hostname, const char *path,
   char request[CLIENT_BUFFER_SIZE] = {'\0'};
   char request_template[] = "GET /%s HTTP/1.1 \r\nHost: %s\r\n\r\n";
   char filename[255];
+  char *log_msg;
   int socketfd;
   struct addrinfo hints, *servinfo, *p;
   int status;
@@ -82,7 +82,7 @@ char *page_downloader(const char *hostname, const char *path,
     return error_msg("[ERROR] client.c - send failed");
   }
   int content_length;
-  if (file_status == 1) {
+  if (file_status == TMP_FILE) {
     content_length = parse_http_header(socketfd);
     *rcv_file = tmpfile();
   } else {
@@ -94,10 +94,16 @@ char *page_downloader(const char *hostname, const char *path,
     const long catched_fn_len = strlen(filename);
     *book_filename = erealloc(
         *book_filename, (book_fn_len + catched_fn_len + 2) * sizeof(char));
+    if (file_status == JUST_FILENAME)
+      **book_filename = '\0';
     strcat(*book_filename, filename);
+    va_end(arg_list);
+    if (file_status == JUST_FILENAME) {
+      log_msg = (char *)ecalloc(1, sizeof(char));
+      goto POST_ROTINES;
+    }
 
     *rcv_file = efopen(*book_filename, "wb+");
-    va_end(arg_list);
   }
   /* *rcv_file must be "free" in sncbd.c */
   if (!(*rcv_file))
@@ -118,11 +124,12 @@ char *page_downloader(const char *hostname, const char *path,
     fprintf(stderr, "Bytes received = %d\n", bytes);
   fflush(*rcv_file);
   /* free in sncbd.c */
-  char *log_msg = (char *)ecalloc(LOGMSG_SIZE, sizeof(char));
+  log_msg = (char *)ecalloc(LOGMSG_SIZE, sizeof(char));
   snprintf(log_msg + 1, LOGMSG_SIZE - 1, "Finished! %.2lf KBs transfered.\n",
            bytes / (float)1024);
 
   /* post rotines */
+POST_ROTINES:
   freeaddrinfo(servinfo);
   close(socketfd);
   return log_msg;

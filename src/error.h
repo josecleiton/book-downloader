@@ -18,7 +18,6 @@ enum { LOGMSG_SIZE = 128 };
 extern bool verbose;
 
 char *error_msg(const char *msg);
-void exit_and_report(void);
 void usage(void);
 
 #endif

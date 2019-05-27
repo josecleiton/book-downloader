@@ -123,7 +123,7 @@ char *search_page(FILE *page_file, struct book_t **book_array,
 
   /* set the file's cursor and compute it's size */
   if (fseek(page_file, FILE_BEG, SEEK_SET) && ferror(page_file)) {
-    exit_and_report();
+     die("parse.c - fseek in search_page");
   }
   char buffer[BOOK_PARSE_BUFFER_SIZE] = {'\0'};
   /* put the formated file in memory */

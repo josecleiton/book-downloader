@@ -14,7 +14,7 @@
 #include <string.h>
 #include <sys/stat.h>
 
-#if __unix__ || __APPLE__
+#if __unix__
 #define CLEAR system("clear")
 #define HOMEPATH "HOME"
 #elif __WIN32 || __WIN64
@@ -26,7 +26,6 @@
 #define strcenter(str, col, len)                                               \
   ((int)(col + len / 2)), str, ((int)(col - len / 2)), ""
 #define strcenter_len(str, col) strcenter(str, col, strlen(str))
-/* ((int)(col + (len / 2))), str, ((int)(col - (len / 2))), "" */
 #define printf_center(str, col)                                                \
   printf("%*s%*s", strcenter(str, col, strlen(str)))
 #define printf_int_center(num, col)                                            \
@@ -42,7 +41,6 @@
  * check the LICENSE file
  */
 
-enum { TMP_FILE = 1 };
 enum {
   SEARCH_PATTERN,
   BOOK_BIB_PATH,
