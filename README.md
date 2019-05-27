@@ -33,6 +33,6 @@ Optional arguments:
 
         -v               Verbose mode
 
-usage: `usage: -s STR [ -b STR ] [ -d STR ] [ -o STR ] [ -m ASC | DESC ] [ -v ]`
+usage: `scbd -s STR [ -b STR ] [ -d STR ] [ -o STR ] [ -m ASC | DESC ] [ -v ]`
 
 Don't forget to read the `LICENSE` file.
