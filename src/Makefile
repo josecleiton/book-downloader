@@ -1,15 +1,16 @@
 .POSIX:
 CC = gcc
-CFLAGS = -g -Wall -Wextra -Wcast-align -lm
+CFLAGS = -g -Wall -Wextra -Wcast-align
 SRCS = client.c  error.c  main.c  parse.c  types.c  scbd.c  libsl/util.c
 OBJS = $(SRCS:.c=.o)
+LIBS = -lm
 MAIN = scbd
 
 all: $(MAIN)
 	   @echo Simple C Book Downloader has been compiled
 
 $(MAIN): $(OBJS)
-	       $(CC) $(CFLAGS) -o $(MAIN) $(OBJS)
+	       $(CC) $(CFLAGS) -o $(MAIN) $(OBJS) $(LIBS)
 				 $(CLEAN)
 
 .c.o:
