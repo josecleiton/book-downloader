@@ -33,6 +33,6 @@ Optional arguments:
 
         -v               Verbose mode
 
-usage: `-s STR [ -b STR ] [ -d STR ] [ -v ]`
+usage: `usage: -s STR [ -b STR ] [ -d STR ] [ -o STR ] [ -m ASC | DESC ] [ -v ]`
 
 Don't forget to read the `LICENSE` file.
