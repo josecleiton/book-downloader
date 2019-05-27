@@ -47,19 +47,21 @@ enum {
   SEARCH_PATTERN,
   BOOK_BIB_PATH,
   BOOK_PATH,
-  ARG_LEN = 3,
+  SORT_ORDER,
+  ARG_LEN = 4,
 };
 
-int exec(char *args[], const int arg_status);
+int exec(char *args[]);
 int download_search_page(char *pattern, char **log_msg, struct book_t **books,
                          int *books_len, const int curr_page,
-                         uint64_t *cached_pages);
+                         uint64_t *cached_pages, char *local_sort_book_order);
 void download_mirror_page(struct book_t *selected_book, char **log_msg);
 bool download_book_page(struct book_t *selected_book, char **log_msg);
 char *download_book(struct book_t *selected_book, char **log_msg,
-                    const int arg_status, ...);
+                    char *local_save_ref_dir, char *local_save_dir);
 
-void generate_ref(const struct book_t *selected_book, const long book_fn_name);
+void generate_ref(const struct book_t *selected_book, const long start_book_fn,
+                  char *local_save_ref_dir);
 
 uint64_t is_cached(const int curr_page, const uint64_t cached_pages);
 void print_cached_pages(const uint64_t bitset);
@@ -68,7 +70,8 @@ void split_url(const char *url, char **hostname, char **path);
 void logo(void);
 void greeting_message(void);
 void help_message(void);
-void success_message(char *msg, const struct book_t *selected_book);
+void success_message(char *msg, const struct book_t *selected_book,
+                     const char *local_save_ref_dir);
 void print_table_of_books(struct book_t *array, const int array_len,
                           const int curr_page, const int status);
 void draw_book_column(char *text, const size_t len);

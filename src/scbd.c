@@ -2,21 +2,24 @@
 
 static int MAX_PAGES = INT_MAX;
 static int MAX_BOOKS_IN_CURR_PAGE = INT_MAX;
-static char *local_save_dir = NULL, *local_save_ref_dir = NULL;
 
-int exec(char *args[], const int arg_status) {
+int exec(char *args[]) {
   if (!args[SEARCH_PATTERN])
     usage();
+  CLEAR;
   struct pages pages;
   memset(&pages, 0, sizeof(struct pages));
   int selected_book = FAILURE, curr_page = 0, status;
   char *log_msg = NULL;
   int download_book_page_status = 0;
+  char *local_save_dir = !args[BOOK_PATH] ? (char *)save_dir : args[BOOK_PATH];
+  char *local_save_ref_dir =
+      !args[BOOK_BIB_PATH] ? (char *)save_ref_dir : args[BOOK_BIB_PATH];
   while (!download_book_page_status) {
     greeting_message(); /* welcome to scbd etc etc */
     status = download_search_page(
         args[SEARCH_PATTERN], &log_msg, &pages.lib[curr_page].books,
-        &pages.lib[curr_page].size, curr_page, &pages.bitset);
+        &pages.lib[curr_page].size, curr_page, &pages.bitset, args[SORT_ORDER]);
     if (status == SUCCESS) {
       MAX_BOOKS_IN_CURR_PAGE = pages.lib[curr_page].size;
       if ((selected_book = user_input(
@@ -38,9 +41,8 @@ int exec(char *args[], const int arg_status) {
       if ((download_book_page_status =
                download_book_page(&pages.lib[curr_page].books[selected_book],
                                   &log_msg)) == SUCCESS) {
-        log_msg =
-            download_book(&pages.lib[curr_page].books[selected_book], &log_msg,
-                          arg_status, args[BOOK_BIB_PATH], args[BOOK_PATH]);
+        log_msg = download_book(&pages.lib[curr_page].books[selected_book],
+                                &log_msg, local_save_ref_dir, local_save_dir);
         download_book_page_status = 1;
         /* has been checked inside the function */
       } else if (download_book_page_status != FAILURE)
@@ -53,7 +55,8 @@ int exec(char *args[], const int arg_status) {
     }
   }
   if (download_book_page_status != FAILURE)
-    success_message(log_msg, &pages.lib[curr_page].books[selected_book]);
+    success_message(log_msg, &pages.lib[curr_page].books[selected_book],
+                    local_save_ref_dir);
   pages_book_t_free(&pages);
   return EXIT_SUCCESS;
 }
@@ -75,20 +78,22 @@ void greeting_message(void) {
 }
 
 void help_message(void) {
-  puts("Simple C Book Downloader\n"
-       "Search for books/articles in Library Genesis\n"
-       "\nRequired arguments:");
-  printf("\t%-16s Set the string search (usually author/book name)\n\n", "-s");
-  puts("Optional arguments:");
-  printf("\t%-16s Show this help message\n", "-h");
   printf(
-      "\t%-16s Set another reference folder (where .bib will be downloaded)\n",
-      "-b");
-  printf("\t%-16s Set another book folder\n", "-d");
-  printf("\t%-16s Verbose mode\n\n", "-v");
+      "Simple C Book Downloader\n"
+      "Search for books/articles in Library Genesis\n"
+      "\nRequired arguments:\n"
+      "\t%-16s Set the string search (usually author/book name)\n\n" //-s
+      "Optional arguments:\n"
+      "\t%-16s Show this help message\n"
+      "\t%-16s Change the default sort order\n"
+      "\t%-16s Set another reference folder (where .bib will be downloaded)\n"
+      "\t%-16s Set another book folder\n"
+      "\t%-16s Verbose mode\n\n",
+      "-s", "-h", "-o", "-b", "-d", "-v");
 }
 
-void success_message(char *msg, const struct book_t *selected_book) {
+void success_message(char *msg, const struct book_t *selected_book,
+                     const char *local_save_ref_dir) {
   printf("\n%s\nYour book is in %s.\n", msg + 1, selected_book->path);
   if (*local_save_ref_dir) {
     printf("The book .bib reference file is in %s dir.\n", local_save_ref_dir);
@@ -108,16 +113,20 @@ void check_log_msg(char *msg) {
 
 int download_search_page(char *pattern, char **log_msg, struct book_t **books,
                          int *books_len, const int curr_page,
-                         uint64_t *cached_pages) {
+                         uint64_t *cached_pages, char *local_sort_book_order) {
   int status;
   printf("\nSearch pattern: %s\n", pattern);
   if (is_cached(curr_page, *cached_pages)) {
     status = SUCCESS;
   } else {
     FILE *rcvd_file = NULL;
-    enum { EXTRA_ARGS_LEN = 32 };
+    enum { EXTRA_ARGS_LEN = 64 };
+    if (!local_sort_book_order)
+      local_sort_book_order = (char *)sort_book_order;
+
     char extra_args[EXTRA_ARGS_LEN] = {'\0'};
-    sprintf(extra_args, "&res=%d&page=%d", MAX_BOOKS_PER_PAGE, curr_page + 1);
+    sprintf(extra_args, "&res=%d&page=%d&sort=%s", MAX_BOOKS_PER_PAGE,
+            curr_page + 1, local_sort_book_order);
     char *full_path = (char *)ecalloc(strlen(gen_lib_search_path) +
                                           strlen(pattern) + EXTRA_ARGS_LEN + 1,
                                       sizeof(char));
@@ -193,24 +202,9 @@ bool download_book_page(struct book_t *selected_book, char **log_msg) {
 }
 
 char *download_book(struct book_t *selected_book, char **log_msg,
-                    const int arg_status, ...) {
+                    char *local_save_ref_dir, char *local_save_dir) {
   FILE *rcvd_file = NULL;
   long book_filename_len;
-  if (arg_status) {
-    va_list args;
-    va_start(args, arg_status);
-    local_save_ref_dir = va_arg(args, char *);
-    local_save_dir = va_arg(args, char *);
-    if (!(arg_status & 1))
-      local_save_ref_dir = (char *)save_ref_dir;
-    if (!(arg_status & 2))
-      local_save_dir = (char *)save_dir;
-    va_end(args);
-  } else {
-    local_save_dir = (char *)save_dir;
-    local_save_ref_dir = (char *)save_ref_dir;
-  }
-
   selected_book->path = get_dir(local_save_dir, &book_filename_len);
   char *hostname, *path;
   int mkdir_status =
@@ -224,13 +218,13 @@ char *download_book(struct book_t *selected_book, char **log_msg,
   free(hostname);
   free(path);
   fclose(rcvd_file);
-  generate_ref(selected_book, book_filename_len);
+  generate_ref(selected_book, book_filename_len, local_save_ref_dir);
   return *log_msg;
 }
 
-void generate_ref(const struct book_t *selected_book,
-                  const long start_book_fn) {
-  if (local_save_dir && *local_save_ref_dir) {
+void generate_ref(const struct book_t *selected_book, const long start_book_fn,
+                  char *local_save_ref_dir) {
+  if (local_save_ref_dir && *local_save_ref_dir) {
     long ref_dir_len;
     char *ref_dir = get_dir(local_save_ref_dir, &ref_dir_len);
     int mkdir_status = mkdir(ref_dir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);

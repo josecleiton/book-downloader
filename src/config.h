@@ -22,5 +22,9 @@ static const char gen_lib_search_path[] = "search.php?req=";
 /* 25 | 50 | 100 */
 static const int MAX_BOOKS_PER_PAGE = 25;
 
+/* id | author | title | publisher | year | pages
+ * filesize | extension*/
+static const char sort_book_order[] = "def";
+
 #endif
 

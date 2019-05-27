@@ -24,6 +24,9 @@ int main(int argc, char *argv[]) {
   case 's':
     args[0] = ARGF();
     break;
+  case 'o':
+    args[3] = ARGF();
+    break;
   case 'v':
     verbose = true;
     break;
@@ -33,6 +36,6 @@ int main(int argc, char *argv[]) {
     usage();
   }
   ARGEND;
-  return exec(args, arg_status);
+  return exec(args);
 }
 
