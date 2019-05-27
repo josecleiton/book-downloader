@@ -68,7 +68,7 @@ void split_url(const char *url, char **hostname, char **path);
 void logo(void);
 void greeting_message(void);
 void help_message(void);
-void success_message(char *msg);
+void success_message(char *msg, const struct book_t *selected_book);
 void print_table_of_books(struct book_t *array, const int array_len,
                           const int curr_page, const int status);
 void draw_book_column(char *text, const size_t len);

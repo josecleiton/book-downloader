@@ -30,6 +30,7 @@ int exec(char *args[], const int arg_status) {
         curr_page = -(selected_book + 1) - 1; /* then convert it to an array */
         continue;
       }
+      selected_book -= 1; /* user input is [1 - n], we need to fix it */
       download_mirror_page(&pages.lib[curr_page].books[selected_book],
                            &log_msg);
       /* first download the book page in gen lib then download the document it
@@ -54,7 +55,7 @@ int exec(char *args[], const int arg_status) {
     }
   }
   if (download_book_page_status != FAILURE)
-    success_message(log_msg);
+    success_message(log_msg, &pages.lib[curr_page].books[selected_book]);
   pages_book_t_free(&pages);
   return EXIT_SUCCESS;
 }
@@ -89,8 +90,8 @@ void help_message(void) {
   printf("\t%-16s Verbose mode\n\n", "-v");
 }
 
-void success_message(char *msg) {
-  printf("%s\nYour book is in %s dir.\n", msg + 1, local_save_dir);
+void success_message(char *msg, const struct book_t *selected_book) {
+  printf("\n%s\nYour book is in %s.\n", msg + 1, selected_book->path);
   if (*local_save_ref_dir) {
     printf("The book .bib reference file is in %s dir.\n", local_save_ref_dir);
   }
@@ -398,9 +399,8 @@ int user_input(const char *msg, const char *info, int (*check_input)(char *)) {
   char input[10];
   int choice, error = 0;
   do {
-    if (error++) {
+    if (error++)
       puts(info);
-    }
     printf("\n%s\n>>> ", msg);
     scanf("%s", input);
   } while ((choice = check_input(input)) == FAILURE);
@@ -412,15 +412,13 @@ int user_input_arg(const char *msg, const char *info, char *container) {
   int error = 0;
   printf("\n%s\n>>> ", msg);
   do {
-    if (error++) {
+    if (error++) 
       puts(info);
-    }
     scanf("%s", container);
     container_len = strlen(container);
     if (container_len == 1 && (*container == 'q' || *container == 'Q' ||
-                               *container == 'n' || *container == 'N')) {
+                               *container == 'n' || *container == 'N'))
       return FAILURE;
-    }
 
   } while (container_len <= 3);
   return SUCCESS;
@@ -431,23 +429,20 @@ int check_input_search_page(char *in) {
   int ans = 0;
   /* prevent stupid inputs */
   const long long input_len = strlen(in);
-  if (input_len < 0 || input_len > INT_MAX / 4) {
-    return false;
-  }
+  if (input_len < 0 || input_len > INT_MAX / 4)
+    return FAILURE;
   if (*in == 'p' || *in == 'P') {
     is_page = true;
     in += 1;
   }
-  if (sscanf(in, "%d", &ans) <= 0 && input_len > 1) {
-    return false;
-  }
-  if (is_page) {
+  if (sscanf(in, "%d", &ans) <= 0 && input_len > 1)
+    return FAILURE;
+  if (is_page)
     ans = (ans <= MAX_PAGES) ? (-ans - 1) : FAILURE;
-  } else if (*in == 'q' || *in == 'Q' || ans == 0) {
+  else if (*in == 'q' || *in == 'Q' || ans == 0)
     ans = EXIT_SUCCESS;
-  } else {
-    ans = (ans <= MAX_BOOKS_IN_CURR_PAGE) ? (ans - 1) : FAILURE;
-  }
+  else if(ans > MAX_BOOKS_IN_CURR_PAGE)
+    ans = FAILURE;
   return ans;
 }
 
