@@ -6,7 +6,6 @@
 char *argv0 = NULL;
 
 int main(int argc, char *argv[]) {
-  int arg_status = 0;
   char *args[ARG_LEN];
   memset(args, 0, ARG_LEN * sizeof(char*));
   if (argc == 1) {
@@ -15,14 +14,15 @@ int main(int argc, char *argv[]) {
   ARGBEGIN {
   case 'b':
     args[1] = ARGF();
-    arg_status |= 1;
     break;
   case 'd':
     args[2] = ARGF();
-    arg_status |= 2;
     break;
   case 's':
     args[0] = ARGF();
+    break;
+  case 'm':
+    args[4] = ARGF();
     break;
   case 'o':
     args[3] = ARGF();

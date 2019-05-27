@@ -15,11 +15,16 @@ int exec(char *args[]) {
   char *local_save_dir = !args[BOOK_PATH] ? (char *)save_dir : args[BOOK_PATH];
   char *local_save_ref_dir =
       !args[BOOK_BIB_PATH] ? (char *)save_ref_dir : args[BOOK_BIB_PATH];
+  char *local_sort_order =
+      !args[SORT_ORDER] ? (char *)sort_book_order : args[SORT_ORDER];
+  char *local_sort_mode =
+      !args[SORT_MODE] ? (char *)sort_mode : args[SORT_MODE];
   while (!download_book_page_status) {
     greeting_message(); /* welcome to scbd etc etc */
     status = download_search_page(
         args[SEARCH_PATTERN], &log_msg, &pages.lib[curr_page].books,
-        &pages.lib[curr_page].size, curr_page, &pages.bitset, args[SORT_ORDER]);
+        &pages.lib[curr_page].size, curr_page, &pages.bitset, local_sort_order,
+        local_sort_mode);
     if (status == SUCCESS) {
       MAX_BOOKS_IN_CURR_PAGE = pages.lib[curr_page].size;
       if ((selected_book = user_input(
@@ -85,11 +90,12 @@ void help_message(void) {
       "\t%-16s Set the string search (usually author/book name)\n\n" //-s
       "Optional arguments:\n"
       "\t%-16s Show this help message\n"
-      "\t%-16s Change the default sort order\n"
+      "\t%-16s Set another sort order\n"
+      "\t%-16s Set another sort mode (ASC[endant] | DESC[endant])\n"
       "\t%-16s Set another reference folder (where .bib will be downloaded)\n"
       "\t%-16s Set another book folder\n"
       "\t%-16s Verbose mode\n\n",
-      "-s", "-h", "-o", "-b", "-d", "-v");
+      "-s", "-h", "-o", "-m", "-b", "-d", "-v");
 }
 
 void success_message(char *msg, const struct book_t *selected_book,
@@ -113,7 +119,8 @@ void check_log_msg(char *msg) {
 
 int download_search_page(char *pattern, char **log_msg, struct book_t **books,
                          int *books_len, const int curr_page,
-                         uint64_t *cached_pages, char *local_sort_book_order) {
+                         uint64_t *cached_pages, const char *sort_book_order,
+                         const char *sort_mode) {
   int status;
   printf("\nSearch pattern: %s\n", pattern);
   if (is_cached(curr_page, *cached_pages)) {
@@ -121,12 +128,10 @@ int download_search_page(char *pattern, char **log_msg, struct book_t **books,
   } else {
     FILE *rcvd_file = NULL;
     enum { EXTRA_ARGS_LEN = 64 };
-    if (!local_sort_book_order)
-      local_sort_book_order = (char *)sort_book_order;
 
     char extra_args[EXTRA_ARGS_LEN] = {'\0'};
-    sprintf(extra_args, "&res=%d&page=%d&sort=%s", MAX_BOOKS_PER_PAGE,
-            curr_page + 1, local_sort_book_order);
+    sprintf(extra_args, "&res=%d&page=%d&sort=%s&sortmode=%s",
+            MAX_BOOKS_PER_PAGE, curr_page + 1, sort_book_order, sort_mode);
     char *full_path = (char *)ecalloc(strlen(gen_lib_search_path) +
                                           strlen(pattern) + EXTRA_ARGS_LEN + 1,
                                       sizeof(char));

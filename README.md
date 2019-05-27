@@ -23,6 +23,10 @@ Optional arguments:
 
         -h               Show this help message
 
+        -o               Set another sort order
+
+        -h               Set another sort mode (ASC[endant] | DESC[endant])
+
         -b               Set another reference folder (where .bib will be downloaded)
 
         -d               Set another book folder

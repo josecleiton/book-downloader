@@ -10,6 +10,7 @@ all: $(MAIN)
 
 $(MAIN): $(OBJS)
 	       $(CC) $(CFLAGS) -o $(MAIN) $(OBJS)
+				 $(CLEAN)
 
 .c.o:
 			$(CC) $(CFLAGS) -c $< -o $@

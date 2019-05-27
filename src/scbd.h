@@ -48,13 +48,15 @@ enum {
   BOOK_BIB_PATH,
   BOOK_PATH,
   SORT_ORDER,
-  ARG_LEN = 4,
+  SORT_MODE,
+  ARG_LEN = 5,
 };
 
 int exec(char *args[]);
 int download_search_page(char *pattern, char **log_msg, struct book_t **books,
                          int *books_len, const int curr_page,
-                         uint64_t *cached_pages, char *local_sort_book_order);
+                         uint64_t *cached_pages, const char *sort_book_order,
+                         const char *sort_mode);
 void download_mirror_page(struct book_t *selected_book, char **log_msg);
 bool download_book_page(struct book_t *selected_book, char **log_msg);
 char *download_book(struct book_t *selected_book, char **log_msg,

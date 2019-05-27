@@ -24,7 +24,10 @@ static const int MAX_BOOKS_PER_PAGE = 25;
 
 /* id | author | title | publisher | year | pages
  * filesize | extension*/
-static const char sort_book_order[] = "def";
+static const char sort_book_order[] = "year";
+
+/* ASC | DESC */
+static const char sort_mode[] = "DESC";
 
 #endif
 
