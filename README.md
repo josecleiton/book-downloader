@@ -27,9 +27,9 @@ Optional arguments:
 
         -h               Set another sort mode { ASC[endant] | DESC[endant] }
 
-        -b               Set another reference folder (where .bib will be downloaded)
+        -b               Set another reference folder (where .bib will be downloaded) [empty string to ignore bib file]
 
-        -d               Set another book folder
+        -d               Set another book folder [empty string to ignore book file]
 
         -v               Verbose mode
 

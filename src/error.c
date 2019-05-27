@@ -13,7 +13,5 @@ char *error_msg(const char *msg) {
   return result;
 }
 
-void exit_and_report(void) { die(strerror(errno)); }
-
 void usage(void) { die("usage: -s STR [ -b STR ] [ -d STR ] [ -o STR ] [ -m ASC | DESC ] [ -v ]"); }
 

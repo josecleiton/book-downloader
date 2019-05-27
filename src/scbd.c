@@ -87,15 +87,15 @@ void help_message(void) {
       "Simple C Book Downloader\n"
       "Search for books/articles in Library Genesis\n"
       "\nRequired arguments:\n"
-      "\t%-16s Set the string search (usually author/book name)\n\n" //-s
+      "\t%-16sSet the string search (usually author/book name)\n\n" //-s
       "Optional arguments:\n"
-      "\t%-16s Show this help message\n"
-      "\t%-16s Set another sort order { id | author | title | publisher | year "
+      "\t%-16sShow this help message\n"
+      "\t%-16sSet another sort order { id | author | title | publisher | year "
       "| pages | filesize | extension }\n"
-      "\t%-16s Set another sort mode { ASC[endant] | DESC[endant] }\n"
-      "\t%-16s Set another reference folder (where .bib will be downloaded)\n"
-      "\t%-16s Set another book folder\n"
-      "\t%-16s Verbose mode\n\n",
+      "\t%-16sSet another sort mode { ASC[endant] | DESC[endant] }\n"
+      "\t%-16sSet another reference folder (where .bib will be downloaded) [empty string to ignore bib file]\n"
+      "\t%-16sSet another book folder [empty string to ignore book file]\n"
+      "\t%-16sVerbose mode\n\n",
       "-s", "-h", "-o", "-m", "-b", "-d", "-v");
 }
 
@@ -111,9 +111,8 @@ void success_message(char *msg, const struct book_t *selected_book,
 
 void check_log_msg(char *msg) {
   if (*msg) {
-    fprintf(stderr, "%s\n", msg);
+    die(msg);
     free(msg);
-    exit_and_report();
   }
   free(msg);
 }
@@ -210,27 +209,34 @@ bool download_book_page(struct book_t *selected_book, char **log_msg) {
 char *download_book(struct book_t *selected_book, char **log_msg,
                     char *local_save_ref_dir, char *local_save_dir) {
   FILE *rcvd_file = NULL;
-  long book_filename_len;
-  selected_book->path = get_dir(local_save_dir, &book_filename_len);
-  char *hostname, *path;
-  int mkdir_status =
-      mkdir(local_save_dir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-  if (mkdir_status == ENOTDIR || mkdir_status == ENAMETOOLONG) {
-    die("save_dir variable not configured properly.");
-  }
+  long book_filename_len = 0;
+  char *hostname = NULL, *path = NULL;
+  const int page_download_status =
+      *local_save_dir ? REGULAR_FILE : JUST_FILENAME;
   split_url(selected_book->download_url, &hostname, &path);
-  *log_msg = page_downloader(hostname, path, !TMP_FILE, &rcvd_file,
+  if (page_download_status == REGULAR_FILE) {
+    selected_book->path = get_dir(local_save_dir, &book_filename_len);
+    int mkdir_status =
+        mkdir(local_save_dir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    if (mkdir_status == ENOTDIR || mkdir_status == ENAMETOOLONG) {
+      die("save_dir variable not configured properly.");
+    }
+  }
+  *log_msg = page_downloader(hostname, path, page_download_status, &rcvd_file,
                              &selected_book->path, book_filename_len);
-  free(hostname);
-  free(path);
-  fclose(rcvd_file);
+  check_log_msg(*log_msg);
+  if (page_download_status == REGULAR_FILE) {
+    free(hostname);
+    free(path);
+    fclose(rcvd_file);
+  }
   generate_ref(selected_book, book_filename_len, local_save_ref_dir);
   return *log_msg;
 }
 
 void generate_ref(const struct book_t *selected_book, const long start_book_fn,
                   char *local_save_ref_dir) {
-  if (local_save_ref_dir && *local_save_ref_dir) {
+  if (*local_save_ref_dir) {
     long ref_dir_len;
     char *ref_dir = get_dir(local_save_ref_dir, &ref_dir_len);
     int mkdir_status = mkdir(ref_dir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);

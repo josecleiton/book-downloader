@@ -13,7 +13,7 @@
 
 /*
  * least significant one bit of an integer
- * relevant to iterate through struct pages
+ * relevant to iterate through bitset
  */
 #define LSONE(i) (i & (-i))
 
