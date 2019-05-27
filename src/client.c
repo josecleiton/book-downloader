@@ -52,20 +52,21 @@ char *page_downloader(const char *hostname, const char *path,
   hints.ai_flags = AI_PASSIVE;
   hints.ai_socktype = SOCK_STREAM;
 
-  if ((status = getaddrinfo(hostname, "http", &hints, &servinfo)) != 0) {
+  if ((status = getaddrinfo(hostname, "http", &hints, &servinfo))) {
     perror("getaddrinfo");
     perror(gai_strerror(status));
     return error_msg("[ERROR] client.c - getaddrinfo");
   }
 
   /* search by valid socket */
-  for (p = servinfo; p != NULL; p = p->ai_next) {
+  for (p = servinfo; p; p = p->ai_next) {
     if ((socketfd = socket(servinfo->ai_family, servinfo->ai_socktype,
                            servinfo->ai_protocol)) == -1)
       continue;
-    if (connect(socketfd, servinfo->ai_addr, servinfo->ai_addrlen) == -1)
+    if (connect(socketfd, servinfo->ai_addr, servinfo->ai_addrlen) == -1) {
       close(socketfd);
-    continue;
+      continue;
+    }
     break;
   }
   if (!p) {
