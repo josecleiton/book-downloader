@@ -183,7 +183,7 @@ char *search_page(FILE *page_file, struct book_t **book_array,
           }
         } else {
           if (STATE == FAILURE && book_count == 0) {
-            return error_msg("[ERROR] parse.c - HTTP #3");
+            return error_msg("[ERROR] parse.c - BOOK NOT FOUND");
           } else {
           STATUS_CHECK:
             if (book_count == 0) {
