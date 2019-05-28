@@ -57,9 +57,8 @@ int download_search_page(char *pattern, char **log_msg, struct book_t **books,
                          const char *sort_mode);
 void download_mirror_page(struct book_t *selected_book, char **log_msg);
 bool download_book_page(struct book_t *selected_book, char **log_msg);
-char *download_book(struct book_t *selected_book, char **log_msg,
-                    char *local_save_ref_dir, char *local_save_dir);
-
+char *download_book(struct book_t *selected_book, char *local_save_ref_dir,
+                    char *local_save_dir) ;
 void generate_ref(const struct book_t *selected_book, const long start_book_fn,
                   char *local_save_ref_dir);
 

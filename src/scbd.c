@@ -40,15 +40,16 @@ int exec(char *args[]) {
         continue;
       }
       selected_book -= 1; /* user input is [1 - n], we need to fix it */
-      download_mirror_page(&pages.lib[curr_page].books[selected_book],
-                           &log_msg);
+      if (!pages.lib[curr_page].books[selected_book].isbn)
+        download_mirror_page(&pages.lib[curr_page].books[selected_book],
+                             &log_msg);
       /* first download the book page in gen lib then download the document it
        * self */
       if ((download_book_page_status =
                download_book_page(&pages.lib[curr_page].books[selected_book],
                                   &log_msg)) == SUCCESS) {
         log_msg = download_book(&pages.lib[curr_page].books[selected_book],
-                                &log_msg, local_save_ref_dir, local_save_dir);
+                                local_save_ref_dir, local_save_dir);
         download_book_page_status = 1;
         /* has been checked inside the function */
       } else
@@ -208,11 +209,11 @@ bool download_book_page(struct book_t *selected_book, char **log_msg) {
   return user_input("Continue?", "[y]es or [n]o", check_input_book);
 }
 
-char *download_book(struct book_t *selected_book, char **log_msg,
-                    char *local_save_ref_dir, char *local_save_dir) {
+char *download_book(struct book_t *selected_book, char *local_save_ref_dir,
+                    char *local_save_dir) {
   FILE *rcvd_file = NULL;
   long book_filename_len = 0;
-  char *hostname = NULL, *path = NULL;
+  char *hostname = NULL, *path = NULL, *log_msg = NULL;
   const int page_download_status =
       *local_save_dir ? REGULAR_FILE : JUST_FILENAME;
   split_url(selected_book->download_url, &hostname, &path);
@@ -221,19 +222,18 @@ char *download_book(struct book_t *selected_book, char **log_msg,
     int mkdir_status =
         mkdir(selected_book->path, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     if (mkdir_status == ENOTDIR || mkdir_status == ENAMETOOLONG) {
-      die("save_dir variable not configured properly.");
+      die("scbd.c - save_dir variable not configured properly.");
     }
   }
-  *log_msg = page_downloader(hostname, path, page_download_status, &rcvd_file,
+  log_msg = page_downloader(hostname, path, page_download_status, &rcvd_file,
                              &selected_book->path, book_filename_len);
-  check_log_msg(*log_msg);
   if (page_download_status == REGULAR_FILE) {
     free(hostname);
     free(path);
     fclose(rcvd_file);
   }
   generate_ref(selected_book, book_filename_len, local_save_ref_dir);
-  return *log_msg;
+  return log_msg;
 }
 
 void generate_ref(const struct book_t *selected_book, const long start_book_fn,
