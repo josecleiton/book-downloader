@@ -3,14 +3,11 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-char *argv0 = NULL;
+char *argv0;
 
 int main(int argc, char *argv[]) {
   char *args[ARG_LEN];
   memset(args, 0, ARG_LEN * sizeof(char*));
-  if (argc == 1) {
-    usage();
-  }
   ARGBEGIN {
   case 'b':
     args[1] = ARGF();

@@ -1,6 +1,7 @@
 #include "error.h"
 
 bool verbose = false;
+char *argv0;
 
 char *error_msg(const char *msg) {
   size_t result_size = 128 + strlen(msg);
@@ -10,5 +11,5 @@ char *error_msg(const char *msg) {
   return result;
 }
 
-void usage(void) { die("usage: -s STR [ -b STR ] [ -d STR ] [ -o STR ] [ -m ASC | DESC ] [ -v ]"); }
+void usage(void) { die("usage: %s -s STR [ -b STR ] [ -d STR ] [ -o STR ] [ -m ASC | DESC ] [ -v ]", argv0); }
 
