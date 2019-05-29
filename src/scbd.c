@@ -9,9 +9,9 @@ int exec(char *args[]) {
   CLEAR;
   struct pages pages;
   memset(&pages, 0, sizeof(struct pages));
-  int selected_book = FAILURE, curr_page = 0, status;
+  int selected_book = FAILURE, curr_page = 0;
   char *log_msg = NULL;
-  int download_book_page_status = 0;
+  int download_book_page_status = FAILURE;
   /* grep user args if exists */
   char *local_save_dir = !args[BOOK_PATH] ? (char *)save_dir : args[BOOK_PATH];
   char *local_save_ref_dir =
@@ -20,48 +20,35 @@ int exec(char *args[]) {
       !args[SORT_ORDER] ? (char *)sort_book_order : args[SORT_ORDER];
   char *local_sort_mode =
       !args[SORT_MODE] ? (char *)sort_mode : args[SORT_MODE];
-  while (!download_book_page_status) {
+  while (download_book_page_status == FAILURE) {
     greeting_message(); /* welcome to scbd etc etc */
-    status = download_search_page(
-        args[SEARCH_PATTERN], &log_msg, &pages.lib[curr_page].books,
-        &pages.lib[curr_page].size, curr_page, &pages.bitset, local_sort_order,
-        local_sort_mode);
-    if (status == SUCCESS) {
-      MAX_BOOKS_IN_CURR_PAGE = pages.lib[curr_page].size;
-      if ((selected_book = user_input(
-               "Select a book [1 - n] or [p|P]age [1 - n] ([q|Q|0] to exit)",
-               "Input a number to pick a book or p[NUM] to jump to NUM page",
-               check_input_search_page)) == SUCCESS) {
-        download_book_page_status = FAILURE;
-        break;
-      } else if (selected_book < FAILURE) {
-        /* page return a number between [-n, -2] */
-        curr_page = -(selected_book + 1) - 1; /* then convert it to an array */
-        continue;
-      }
-      selected_book -= 1; /* user input is [1 - n], we need to fix it */
-      if (!pages.lib[curr_page].books[selected_book].isbn)
-        download_mirror_page(&pages.lib[curr_page].books[selected_book],
-                             &log_msg);
-      /* first download the book page in gen lib then download the document it
-       * self */
-      if ((download_book_page_status =
-               download_book_page(&pages.lib[curr_page].books[selected_book],
-                                  &log_msg)) == SUCCESS) {
-        log_msg = download_book(&pages.lib[curr_page].books[selected_book],
-                                local_save_ref_dir, local_save_dir);
-        download_book_page_status = 1;
-        /* has been checked inside the function */
-      } else
-        download_book_page_status = 0;
-    } else {
-      user_input_arg("Do you want to retry? ",
-                     "Input a search string or [n]o to quit.",
-                     args[SEARCH_PATTERN]);
-      pages_book_t_free(&pages);
+    download_search_page(args[SEARCH_PATTERN], &log_msg,
+                         &pages.lib[curr_page].books,
+                         &pages.lib[curr_page].size, curr_page, &pages.bitset,
+                         local_sort_order, local_sort_mode);
+    MAX_BOOKS_IN_CURR_PAGE = pages.lib[curr_page].size;
+    if ((selected_book = user_input(
+             "Select a book [1 - n] or [p|P]age [1 - n] ([q|Q|0] to exit)",
+             "Input a number to pick a book or p[NUM] to jump to NUM page",
+             check_input_search_page)) == LOCAL_EXIT)
+      break;
+    else if (selected_book < FAILURE) {
+      /* page return a number between [-n, -2], convert it to arr idx */
+      curr_page = -(selected_book + 1) - 1;
+      continue;
     }
+    selected_book -= 1; /* user input is [1 - n], we need to convert it */
+    if (!pages.lib[curr_page].books[selected_book].isbn)
+      download_mirror_page(&pages.lib[curr_page].books[selected_book],
+                           &log_msg);
+    /* first download the book page in gen lib then download the document it
+     * self */
+    if ((download_book_page_status = download_book_page(
+             &pages.lib[curr_page].books[selected_book], &log_msg)) == SUCCESS)
+      log_msg = download_book(&pages.lib[curr_page].books[selected_book],
+                              local_save_ref_dir, local_save_dir);
   }
-  if (download_book_page_status != FAILURE)
+  if (download_book_page_status == SUCCESS)
     success_message(log_msg, &pages.lib[curr_page].books[selected_book],
                     local_save_ref_dir);
   pages_book_t_free(&pages);
@@ -106,7 +93,7 @@ void help_message(void) {
 void success_message(char *msg, const struct book_t *selected_book,
                      const char *local_save_ref_dir) {
   if (*(selected_book->path))
-    printf("\n%s\nYour book is in %s.\n", msg + 1, selected_book->path);
+    printf("\n\n\t\t%s\n\nYour book is in %s.\n", msg + 1, selected_book->path);
   if (*local_save_ref_dir)
     printf("The book .bib reference file is in %s dir.\n", local_save_ref_dir);
   puts("Have a nice day!\n");
@@ -121,15 +108,13 @@ void check_log_msg(char *msg) {
   free(msg);
 }
 
-int download_search_page(char *pattern, char **log_msg, struct book_t **books,
-                         int *books_len, const int curr_page,
-                         uint64_t *cached_pages, const char *sort_book_order,
-                         const char *sort_mode) {
-  int status;
+void download_search_page(char *pattern, char **log_msg, struct book_t **books,
+                          int *books_len, const int curr_page,
+                          uint64_t *cached_pages, const char *sort_book_order,
+                          const char *sort_mode) {
   printf("\nSearch pattern: %s\n", pattern);
-  if (is_cached(curr_page, *cached_pages)) {
-    status = SUCCESS;
-  } else {
+  if (!is_cached(curr_page, *cached_pages)) {
+    int status;
     FILE *rcvd_file = NULL;
     enum { EXTRA_ARGS_LEN = 64 };
 
@@ -161,13 +146,12 @@ int download_search_page(char *pattern, char **log_msg, struct book_t **books,
     *cached_pages |= (1ULL << curr_page);
   }
 
-  print_table_of_books(*books, *books_len, curr_page, status);
+  print_table_of_books(*books, *books_len, curr_page);
   print_cached_pages(*cached_pages);
-  /* replace the '+' for to show in terminal */
+  /* replace the '+' for spaces to show it in terminal */
   for (int cursor = 0; pattern[cursor]; cursor += 1)
     if (pattern[cursor] == '+')
       pattern[cursor] = ' ';
-  return status;
 }
 
 uint64_t is_cached(const int curr_page, const uint64_t cached_pages) {
@@ -225,9 +209,8 @@ char *download_book(struct book_t *selected_book, char *local_save_ref_dir,
     selected_book->path = get_dir(local_save_dir, &book_filename_len);
     int mkdir_status =
         mkdir(selected_book->path, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-    if (mkdir_status == ENOTDIR || mkdir_status == ENAMETOOLONG) {
+    if (mkdir_status == ENOTDIR || mkdir_status == ENAMETOOLONG)
       die("scbd.c - save_dir variable not configured properly.");
-    }
   }
   log_msg =
       page_downloader(hostname, path, page_download_status, &rcvd_file,
@@ -297,7 +280,7 @@ void split_url(const char *url, char **hostname, char **path) {
 }
 
 void print_table_of_books(struct book_t *array, const int array_len,
-                          const int curr_page, const int status) {
+                          const int curr_page) {
   enum {
     INDEX,
   };
@@ -314,65 +297,56 @@ void print_table_of_books(struct book_t *array, const int array_len,
 
   int total_len = 2;
   const int columns_len = (int)CONST_ARR_LEN(columns);
-  for (int curr_column = 0; curr_column < columns_len; curr_column += 1) {
+  for (int curr_column = 0; curr_column < columns_len; curr_column += 1)
     total_len += columns[curr_column].max_length;
-  }
-  if (status == SUCCESS) {
 
-    /*
-     * Table header (trying to figure out how to fix this)
-   printf("  ");
-   for (int curr_column = 0; curr_column < columns_len; curr_column += 1) {
-     printf_center(columns[curr_column].name, columns[curr_column].max_length);
-   }
-     */
-
-    putchar('\n');
-    for (int curr_book = 0; curr_book < array_len; curr_book += 1) {
-      for (int curr_column = 0; curr_column < columns_len; curr_column += 1) {
-        switch (curr_column) {
-        case INDEX:
-          printf("  ");
-          printf_int_center(curr_book + 1, columns[curr_column].max_length);
-          break;
-        case BOOK_AUTHORS:
-          draw_book_column(array[curr_book].authors,
-                           columns[curr_column].max_length);
-          break;
-        case BOOK_TITLE:
-          draw_book_column(array[curr_book].title,
-                           columns[curr_column].max_length);
-          break;
-        case BOOK_PUBLISHER:
-          draw_book_column(array[curr_book].publisher,
-                           columns[curr_column].max_length);
-          break;
-        case BOOK_YEAR:
-          draw_book_column(array[curr_book].year,
-                           columns[curr_column].max_length);
-          break;
-        case BOOK_PAGES:
-          draw_book_column(array[curr_book].lang,
-                           columns[curr_column].max_length);
-          break;
-        case BOOK_SIZE:
-          draw_book_column(array[curr_book].size,
-                           columns[curr_column].max_length);
-          break;
-        case BOOK_EXT:
-          draw_book_column(array[curr_book].ext,
-                           columns[curr_column].max_length);
-          break;
-        }
-        /* putchar('|'); */
+  /*
+   * Table header (trying to figure out how to fix this)
+ printf("  ");
+ for (int curr_column = 0; curr_column < columns_len; curr_column += 1) {
+   printf_center(columns[curr_column].name, columns[curr_column].max_length);
+ }
+   */
+  putchar('\n');
+  for (int curr_book = 0; curr_book < array_len; curr_book += 1) {
+    for (int curr_column = 0; curr_column < columns_len; curr_column += 1) {
+      switch (curr_column) {
+      case INDEX:
+        printf("  ");
+        printf_int_center(curr_book + 1, columns[curr_column].max_length);
+        break;
+      case BOOK_AUTHORS:
+        draw_book_column(array[curr_book].authors,
+                         columns[curr_column].max_length);
+        break;
+      case BOOK_TITLE:
+        draw_book_column(array[curr_book].title,
+                         columns[curr_column].max_length);
+        break;
+      case BOOK_PUBLISHER:
+        draw_book_column(array[curr_book].publisher,
+                         columns[curr_column].max_length);
+        break;
+      case BOOK_YEAR:
+        draw_book_column(array[curr_book].year,
+                         columns[curr_column].max_length);
+        break;
+      case BOOK_PAGES:
+        draw_book_column(array[curr_book].lang,
+                         columns[curr_column].max_length);
+        break;
+      case BOOK_SIZE:
+        draw_book_column(array[curr_book].size,
+                         columns[curr_column].max_length);
+        break;
+      case BOOK_EXT:
+        draw_book_column(array[curr_book].ext, columns[curr_column].max_length);
+        break;
       }
-      putchar('\n');
     }
-    printf("\nCurrent page: [%d/%d]\n", curr_page + 1, MAX_PAGES);
-  } else {
-    /* FAILURE */
-    printf_center("Not found. Try again.", total_len);
+    putchar('\n');
   }
+  printf("\nCurrent page: [%d/%d]\n", curr_page + 1, MAX_PAGES);
 }
 
 void draw_book_column(char *text, const size_t len) {
@@ -452,16 +426,16 @@ int check_input_search_page(char *in) {
   if (is_page)
     ans = (ans <= MAX_PAGES) ? (-ans - 1) : FAILURE;
   else if (*in == 'q' || *in == 'Q' || ans == 0)
-    ans = EXIT_SUCCESS;
+    ans = LOCAL_EXIT;
   else if (ans > MAX_BOOKS_IN_CURR_PAGE)
     ans = FAILURE;
   return ans;
 }
 
 int check_input_book(char *in) {
-  return (*in == 'y' || *in == 'Y')
+  return (*in == 'y' || *in == 'Y' || *in == '1')
              ? SUCCESS
-             : (*in == 'n' || *in == 'N') ? INT_MAX : FAILURE;
+             : (*in == 'n' || *in == 'N' || *in == '0') ? LOCAL_EXIT : FAILURE;
 }
 
 char *get_dir(char *dir, long *len) {

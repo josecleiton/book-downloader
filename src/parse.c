@@ -270,7 +270,6 @@ char *book_page(FILE *page_file, struct book_t *selected_book) {
         close_tag = strchr(match, '<');
         TEST_STR_PTR(close_tag,
                      error_msg("[ERROR] parse.c - HTTP REQUEST #11"));
-        /* must be "free" in snbd.c */
         selected_book->description =
             (char *)ecalloc(close_tag - match + 1, sizeof(char));
         *close_tag = '\0';
@@ -298,7 +297,7 @@ char *mirror_page(FILE *page_file, struct book_t *selected_book) {
     PATTERNS = 4,
   };
 
-  char *buffer, *match, *buffer_cursor, *close_tag;
+  char *buffer, *match, *buffer_cursor, *close_tag = NULL;
   /* all patterns we are looking for in html page */
   static char *pattern[] = {
       "Volume:",

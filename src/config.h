@@ -8,7 +8,7 @@
  */
 
 /* where the books will stay */
-static const char save_dir[] = "";
+static const char save_dir[] = "~/.cache/scbd";
 
 /* where the .bib will stay */
 static const char save_ref_dir[] = "~/.cache/scbd";

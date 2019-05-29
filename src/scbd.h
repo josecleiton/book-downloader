@@ -40,7 +40,7 @@ enum {
 };
 
 int exec(char *args[]);
-int download_search_page(char *pattern, char **log_msg, struct book_t **books,
+void download_search_page(char *pattern, char **log_msg, struct book_t **books,
                          int *books_len, const int curr_page,
                          uint64_t *cached_pages, const char *sort_book_order,
                          const char *sort_mode);
@@ -61,7 +61,7 @@ void help_message(void);
 void success_message(char *msg, const struct book_t *selected_book,
                      const char *local_save_ref_dir);
 void print_table_of_books(struct book_t *array, const int array_len,
-                          const int curr_page, const int status);
+                          const int curr_page);
 void draw_book_column(char *text, const size_t len);
 void print_more_info(struct book_t *selected_book);
 void check_log_msg(char *msg);

@@ -106,7 +106,6 @@ char *page_downloader(const char *hostname, const char *path,
     putchar('\n');
     *rcv_file = efopen(*book_filename, "wb+");
   }
-  /* *rcv_file must be "free" in sncbd.c */
   if (!(*rcv_file))
     return error_msg("[ERROR] client.c - failed to open file");
   int bytes = 0;
@@ -126,9 +125,8 @@ char *page_downloader(const char *hostname, const char *path,
   if (verbose)
     fprintf(stderr, "Bytes received = %d\n", bytes);
   fflush(*rcv_file);
-  /* free in sncbd.c */
   log_msg = (char *)ecalloc(LOGMSG_SIZE, sizeof(char));
-  snprintf(log_msg + 1, LOGMSG_SIZE - 1, "\nFinished! %.2lf KBs transfered.\n",
+  snprintf(log_msg + 1, LOGMSG_SIZE - 1, "Finished! %.2lf KBs transfered.",
            bytes / (float)1024);
 
 POST_ROTINES:
@@ -138,9 +136,9 @@ POST_ROTINES:
 }
 
 bool progress_bar(const int curr_val, const int total) {
-  int cli_ratio = (curr_val * 70) / total,
+  int cli_ratio = (curr_val * PROG_BAR_LEN) / total,
       real_ratio = (curr_val * 100) / total;
-  putchar('[');
+  printf(" [");
   for (int i = 0; i < cli_ratio; i += 1)
     putchar('-');
   for (; cli_ratio < PROG_BAR_LEN; cli_ratio += 1)
