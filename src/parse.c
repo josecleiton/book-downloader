@@ -202,7 +202,7 @@ char *search_page(FILE *page_file, struct book_t **book_array,
   if (*max_pages_in_search == INT_MAX &&
       ((*max_pages_in_search = get_max_pages(match_cursor)) == FAILURE))
     return error_msg("[ERROR] parse.c - Only part of the page received. Try "
-                     "again. \nHTTP REQUEST #5");
+                     "again with another search string. \nHTTP REQUEST #5");
 
   /* null in beginning as "return 0" */
   char *log_msg = ecalloc(1, sizeof(char));
