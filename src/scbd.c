@@ -105,10 +105,10 @@ void help_message(void) {
 
 void success_message(char *msg, const struct book_t *selected_book,
                      const char *local_save_ref_dir) {
-  printf("\n%s\nYour book is in %s.\n", msg + 1, selected_book->path);
-  if (*local_save_ref_dir) {
+  if (*(selected_book->path))
+    printf("\n%s\nYour book is in %s.\n", msg + 1, selected_book->path);
+  if (*local_save_ref_dir)
     printf("The book .bib reference file is in %s dir.\n", local_save_ref_dir);
-  }
   puts("Have a nice day!\n");
   free(msg);
 }
@@ -232,11 +232,12 @@ char *download_book(struct book_t *selected_book, char *local_save_ref_dir,
   log_msg =
       page_downloader(hostname, path, page_download_status, &rcvd_file,
                       PROGRESS_BAR, &selected_book->path, book_filename_len);
-  if (page_download_status == REGULAR_FILE) {
-    free(hostname);
-    free(path);
+  free(hostname);
+  free(path);
+  if (page_download_status == REGULAR_FILE)
     fclose(rcvd_file);
-  }
+  else
+     *(selected_book->path) = '\0';
   generate_ref(selected_book, book_filename_len, local_save_ref_dir);
   return log_msg;
 }
