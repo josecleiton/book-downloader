@@ -40,7 +40,7 @@ enum {
 };
 
 int exec(char *args[]);
-void download_search_page(char *pattern, char **log_msg, struct book_t **books,
+int download_search_page(char *pattern, char **log_msg, struct book_t **books,
                          int *books_len, const int curr_page,
                          uint64_t *cached_pages, const char *sort_book_order,
                          const char *sort_mode);

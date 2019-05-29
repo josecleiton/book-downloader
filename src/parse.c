@@ -31,9 +31,8 @@ int handle_td_element(const char *buffer, const int buffer_len,
         book->authors[authors_len++] = ',';
         book->authors[authors_len++] = ' ';
       }
-      match = strchr(match, '>');
-      TEST_STR_PTR(match, FAILURE);
-      match += 1;
+      match = strchr(match, '>') + 1;
+      TEST_STR_PTR(match - 1, FAILURE);
       char *close_tag = strchr(match, '<');
       TEST_STR_PTR(match, FAILURE);
       *close_tag = '\0';
@@ -53,13 +52,13 @@ int handle_td_element(const char *buffer, const int buffer_len,
     match = strstr(buffer, "book");
     TEST_STR_PTR(match, FAILURE);
     char *close_tag = strchr(match, '\'');
+    TEST_STR_PTR(close_tag, FAILURE);
     *close_tag = '\0';
     book->url = (char *)ecalloc(close_tag - match + 2, sizeof(char));
     strcpy(book->url, match);
 
-    match = strchr(close_tag + 1, '>');
-    TEST_STR_PTR(match, FAILURE);
-    match += 1;
+    match = strchr(close_tag + 1, '>') + 1;
+    TEST_STR_PTR(match - 1, FAILURE);
     close_tag = strchr(match, '<');
     TEST_STR_PTR(match, FAILURE);
     *close_tag = '\0';
@@ -68,9 +67,8 @@ int handle_td_element(const char *buffer, const int buffer_len,
 
   } else if (which_td == BOOK_YEAR) {
     /* just jump the nowrap parameter */
-    match = strchr(buffer, '>');
-    TEST_STR_PTR(match, FAILURE);
-    match += 1;
+    match = strchr(buffer, '>') + 1;
+    TEST_STR_PTR(match - 1, FAILURE);
     book->year = (char *)ecalloc(buffer_len - (match - buffer), sizeof(char));
     strcpy(book->year, match);
   } else if (which_td == BOOK_PUBLISHER) {
@@ -83,15 +81,13 @@ int handle_td_element(const char *buffer, const int buffer_len,
     book->lang = (char *)ecalloc(buffer_len, sizeof(char));
     strcpy(book->lang, buffer);
   } else if (which_td == BOOK_SIZE) {
-    match = strchr(buffer, '>');
-    TEST_STR_PTR(match, FAILURE);
-    match += 1;
+    match = strchr(buffer, '>') + 1;
+    TEST_STR_PTR(match - 1, FAILURE);
     book->size = (char *)ecalloc(buffer_len - (match - buffer), sizeof(char));
     strcpy(book->size, match);
   } else {
-    match = strchr(buffer, '>');
-    TEST_STR_PTR(match, FAILURE);
-    match += 1;
+    match = strchr(buffer, '>') + 1;
+    TEST_STR_PTR(match - 1, FAILURE);
     book->ext = (char *)ecalloc(buffer_len - (match - buffer), sizeof(char));
     strcpy(book->ext, match);
   }
@@ -138,10 +134,9 @@ char *search_page(FILE *page_file, struct book_t **book_array,
   int book_count = 0;
 
   /* jump after book's table and it's first tr in html buffer */
-  char *buffer_cursor = strstr(buffer, pattern[0]);
-  if (!buffer_cursor)
-    return error_msg("[ERROR] parse.c - HTTP #1");
-  buffer_cursor += 85;
+  char *buffer_cursor = strstr(buffer, pattern[0]) + 85;
+  TEST_STR_PTR(buffer_cursor - 85, "[ERROR] parse.c - Only part of the page "
+                                   "received. Try again. \nHTTP REQUEST #1");
 
   bool book_td_parse_finalized = false;
 
@@ -151,7 +146,9 @@ char *search_page(FILE *page_file, struct book_t **book_array,
          curr_pattern += 1) {
       while (STATE < MAX_TD_PER_SEARCH) {
         if ((match_cursor = strstr(buffer_cursor, pattern[curr_pattern]))) {
-          TEST_STR_PTR(match_cursor, error_msg("[ERROR] parse.c - HTTP #2"));
+          TEST_STR_PTR(match_cursor,
+                       error_msg("[ERROR] parse.c - Only part of the page "
+                                 "received. Try again. \nHTTP REQUEST #2"));
           if (curr_pattern == 1) {
             /* ignore first td */
             match_cursor += 36;
@@ -164,7 +161,9 @@ char *search_page(FILE *page_file, struct book_t **book_array,
             match_cursor += 4;
             /* search for the td close tag */
             char *close_td = strstr(match_cursor, pattern[curr_pattern + 1]);
-            TEST_STR_PTR(close_td, error_msg("[ERROR] parse.c - HTTP #3"));
+            TEST_STR_PTR(close_td,
+                         error_msg("[ERROR] parse.c - Only part of the page "
+                                   "received. Try again. \nHTTP REQUEST #3"));
             *close_td = '\0';
             if ((*status = handle_td_element(
                      match_cursor, close_td - match_cursor + 1,
@@ -184,7 +183,8 @@ char *search_page(FILE *page_file, struct book_t **book_array,
           else {
           STATUS_CHECK:
             if (!book_count)
-              return error_msg("[ERROR] parse.c - HTTP REQUEST #4");
+              return error_msg("[ERROR] parse.c - Only part of the page "
+                               "received. Try again. \nHTTP REQUEST #4");
             book_td_parse_finalized = true;
             break;
           }
@@ -201,7 +201,8 @@ char *search_page(FILE *page_file, struct book_t **book_array,
   *book_array_len = book_count;
   if (*max_pages_in_search == INT_MAX &&
       ((*max_pages_in_search = get_max_pages(match_cursor)) == FAILURE))
-    return error_msg("[ERROR] parse.c - HTTP REQUEST #5");
+    return error_msg("[ERROR] parse.c - Only part of the page received. Try "
+                     "again. \nHTTP REQUEST #5");
 
   /* null in beginning as "return 0" */
   char *log_msg = ecalloc(1, sizeof(char));
@@ -237,12 +238,15 @@ char *book_page(FILE *page_file, struct book_t *selected_book) {
 
   for (int curr_pattern = 0; curr_pattern < PATTERNS; curr_pattern += 1) {
     if ((match = strstr(buffer_cursor, pattern[curr_pattern]))) {
-      TEST_STR_PTR(match, error_msg("[ERROR] parse.c - HTTP REQUEST #6"));
       if (curr_pattern == BOOK_DOWNLOAD_LINK) {
-        match = strstr(match, "href");
-        TEST_STR_PTR(match, error_msg("[ERROR] parse.c - HTTP REQUEST #7"));
-        match += 6;
+        match = strstr(match, "href") + 6;
+        TEST_STR_PTR(match - 6,
+                     error_msg("[ERROR] parse.c - Only part of the page "
+                               "received. Try again. \nHTTP REQUEST #7"));
         close_tag = strchr(match, '\"');
+        TEST_STR_PTR(close_tag,
+                     error_msg("[ERROR] parse.c - Only part of the page "
+                               "received. Try again. \nHTTP REQUEST #12"));
         *close_tag = '\0';
         selected_book->download_url =
             (char *)ecalloc(close_tag - match + 1, sizeof(char));
@@ -250,7 +254,9 @@ char *book_page(FILE *page_file, struct book_t *selected_book) {
       } else if (curr_pattern == BOOK_SERIES) {
         match += 8;
         close_tag = strchr(match, '<');
-        TEST_STR_PTR(close_tag, error_msg("[ERROR] parse.c - HTTP REQUEST #8"));
+        TEST_STR_PTR(close_tag,
+                     error_msg("[ERROR] parse.c - Only part of the page "
+                               "received. Try again. \nHTTP REQUEST #8"));
         *close_tag = '\0';
         selected_book->series =
             (char *)ecalloc(close_tag - match + 1, sizeof(char));
@@ -258,18 +264,22 @@ char *book_page(FILE *page_file, struct book_t *selected_book) {
       } else if (curr_pattern == BOOK_ISBN) {
         match += 6;
         close_tag = strchr(match, '<');
-        TEST_STR_PTR(close_tag, error_msg("[ERROR] parse.c - HTTP REQUEST #9"));
+        TEST_STR_PTR(close_tag,
+                     error_msg("[ERROR] parse.c - Only part of the page "
+                               "received. Try again. \nHTTP REQUEST #9"));
         *close_tag = '\0';
         selected_book->isbn =
             (char *)ecalloc(close_tag - match + 1, sizeof(char));
         strcpy(selected_book->isbn, match);
       } else if (match) { /* may not have description */
-        match = strchr(match, '>');
-        TEST_STR_PTR(match, error_msg("[ERROR] parse.c - HTTP REQUEST #10"));
-        match += 1;
+        match = strchr(match, '>') + 1;
+        TEST_STR_PTR(match - 1,
+                     error_msg("[ERROR] parse.c - Only part of the page "
+                               "received. Try again. \nHTTP REQUEST #10"));
         close_tag = strchr(match, '<');
         TEST_STR_PTR(close_tag,
-                     error_msg("[ERROR] parse.c - HTTP REQUEST #11"));
+                     error_msg("[ERROR] parse.c - Only part of the page "
+                               "received. Try again. \nHTTP REQUEST #11"));
         selected_book->description =
             (char *)ecalloc(close_tag - match + 1, sizeof(char));
         *close_tag = '\0';
@@ -277,7 +287,8 @@ char *book_page(FILE *page_file, struct book_t *selected_book) {
       }
       buffer_cursor = close_tag + 1;
     } else if (!curr_pattern)
-      return error_msg("[ERROR] parse.c - HTTP REQUEST #12");
+      return error_msg("[ERROR] parse.c - Only part of the page received. Try "
+                       "again. \nHTTP REQUEST #6");
   }
   char *log_msg = ecalloc(1, sizeof(char));
   /* post rotines */
@@ -315,7 +326,9 @@ char *mirror_page(FILE *page_file, struct book_t *selected_book) {
     if ((match = strstr(buffer_cursor, pattern[curr_pattern]))) {
       if (curr_pattern <= BOOK_ID) {
         match = strstr(match, "<td>") + 4;
-        TEST_STR_PTR(match, error_msg("[ERROR] parse.c - HTTP REQUEST #14"));
+        TEST_STR_PTR(match,
+                     error_msg("[ERROR] parse.c - Only part of the page "
+                               "received. Try again. \nHTTP REQUEST #14"));
         close_tag = strchr(match, '<');
         *close_tag = '\0';
         size_t len = close_tag - match;
@@ -331,17 +344,21 @@ char *mirror_page(FILE *page_file, struct book_t *selected_book) {
         }
       } else if (curr_pattern == BOOK_MIRRORS) {
         match = strstr(match, "<a href=\"");
-        TEST_STR_PTR(match, error_msg("[ERROR] parse.c - HTTP REQUEST #15"));
+        TEST_STR_PTR(match,
+                     error_msg("[ERROR] parse.c - Only part of the page "
+                               "received. Try again. \nHTTP REQUEST #15"));
         match += 9;
         close_tag = strchr(match, '"');
         TEST_STR_PTR(close_tag,
-                     error_msg("[ERROR] parse.c - HTTP REQUEST #16"));
+                     error_msg("[ERROR] parse.c - Only part of the page "
+                               "received. Try again. \nHTTP REQUEST #16"));
         *close_tag = '\0';
         selected_book->url = (char *)erealloc(
             selected_book->url, (close_tag - match + 1) * sizeof(char));
         strcpy(selected_book->url, match);
       } else
-        error_msg("[ERROR] parse.c - HTTP REQUEST #13");
+        error_msg("[ERROR] parse.c - Only part of the page received. Try "
+                  "again. \nHTTP REQUEST #13");
     }
     buffer_cursor = close_tag + 1;
   }
@@ -352,6 +369,7 @@ char *mirror_page(FILE *page_file, struct book_t *selected_book) {
 }
 
 int get_max_pages(const char *buffer) {
+  TEST_STR_PTR(buffer, FAILURE);
   char *match_cursor = strstr(buffer, "new Paginator");
   TEST_STR_PTR(match_cursor, FAILURE);
   for (int comma = 0; comma < 3; comma += 1) {

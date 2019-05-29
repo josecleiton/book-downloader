@@ -122,6 +122,8 @@ char *page_downloader(const char *hostname, const char *path,
          (bytes >= content_length)))
       break;
   }
+  if (content_length != NO_CONTENT_LENGTH && bytes < content_length)
+    die("client.c - download connection lost");
   if (verbose)
     fprintf(stderr, "Bytes received = %d\n", bytes);
   fflush(*rcv_file);

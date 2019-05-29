@@ -1,10 +1,11 @@
 .POSIX:
 CC = gcc
-CFLAGS = -g -Wall -Wextra -Wcast-align
+CFLAGS = -O2 -Wall -Wextra -Wcast-align
 SRCS = client.c  error.c  main.c  parse.c  types.c  scbd.c  libsl/util.c
 OBJS = $(SRCS:.c=.o)
 LIBS = -lm
 MAIN = scbd
+VERSION = 0.1
 
 all: $(MAIN)
 	   @echo Simple C Book Downloader has been compiled
@@ -25,6 +26,7 @@ install: $(MAIN)
 				 mkdir -p $(DESTDIR)$(PREFIX)/bin
 				 cp -f $(MAIN) $(DESTDIR)$(PREFIX)/bin
 				 chmod 755 $(DESTDIR)$(PREFIX)/bin/$(MAIN)
+				 @echo The binary is $(DESTDIR)$(PREFIX)/bin/$(MAIN)
 				 @echo Please take a look in README and LICENSE files.
 				 @echo Have a nice day
 

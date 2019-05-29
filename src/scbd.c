@@ -22,10 +22,14 @@ int exec(char *args[]) {
       !args[SORT_MODE] ? (char *)sort_mode : args[SORT_MODE];
   while (download_book_page_status == FAILURE) {
     greeting_message(); /* welcome to scbd etc etc */
-    download_search_page(args[SEARCH_PATTERN], &log_msg,
-                         &pages.lib[curr_page].books,
-                         &pages.lib[curr_page].size, curr_page, &pages.bitset,
-                         local_sort_order, local_sort_mode);
+    if (download_search_page(
+            args[SEARCH_PATTERN], &log_msg, &pages.lib[curr_page].books,
+            &pages.lib[curr_page].size, curr_page, &pages.bitset,
+            local_sort_order, local_sort_mode) == FAILURE) {
+      fprintf(stderr, "%s\n", log_msg + 1);
+      free(log_msg);
+      break;
+    }
     MAX_BOOKS_IN_CURR_PAGE = pages.lib[curr_page].size;
     if ((selected_book = user_input(
              "Select a book [1 - n] or [p|P]age [1 - n] ([q|Q|0] to exit)",
@@ -102,16 +106,18 @@ void success_message(char *msg, const struct book_t *selected_book,
 
 void check_log_msg(char *msg) {
   if (*msg) {
-    die(msg);
+    char log_msg[LOGMSG_SIZE] = { '\0' };
+    strcpy(log_msg, msg);
     free(msg);
+    die(log_msg);
   }
   free(msg);
 }
 
-void download_search_page(char *pattern, char **log_msg, struct book_t **books,
-                          int *books_len, const int curr_page,
-                          uint64_t *cached_pages, const char *sort_book_order,
-                          const char *sort_mode) {
+int download_search_page(char *pattern, char **log_msg, struct book_t **books,
+                         int *books_len, const int curr_page,
+                         uint64_t *cached_pages, const char *sort_book_order,
+                         const char *sort_mode) {
   printf("\nSearch pattern: %s\n", pattern);
   if (!is_cached(curr_page, *cached_pages)) {
     int status;
@@ -135,7 +141,10 @@ void download_search_page(char *pattern, char **log_msg, struct book_t **books,
     *log_msg = page_downloader(gen_lib, full_path, TMP_FILE, &rcvd_file,
                                !PROGRESS_BAR);
     free(full_path);
-    check_log_msg(*log_msg);
+    if (**log_msg)
+      return FAILURE;
+    else
+       check_log_msg(*log_msg);
 
     *log_msg = search_page(rcvd_file, books, books_len, &status, &MAX_PAGES);
     if (!curr_page) {
@@ -152,6 +161,7 @@ void download_search_page(char *pattern, char **log_msg, struct book_t **books,
   for (int cursor = 0; pattern[cursor]; cursor += 1)
     if (pattern[cursor] == '+')
       pattern[cursor] = ' ';
+  return SUCCESS;
 }
 
 uint64_t is_cached(const int curr_page, const uint64_t cached_pages) {
@@ -220,7 +230,7 @@ char *download_book(struct book_t *selected_book, char *local_save_ref_dir,
   if (page_download_status == REGULAR_FILE)
     fclose(rcvd_file);
   else
-     *(selected_book->path) = '\0';
+    *(selected_book->path) = '\0';
   generate_ref(selected_book, book_filename_len, local_save_ref_dir);
   return log_msg;
 }
@@ -425,7 +435,7 @@ int check_input_search_page(char *in) {
     return FAILURE;
   if (is_page)
     ans = (ans <= MAX_PAGES) ? (-ans - 1) : FAILURE;
-  else if (*in == 'q' || *in == 'Q' || ans == 0)
+  else if (!ans)
     ans = LOCAL_EXIT;
   else if (ans > MAX_BOOKS_IN_CURR_PAGE)
     ans = FAILURE;
