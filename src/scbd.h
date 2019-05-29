@@ -23,17 +23,6 @@
 #endif
 
 #define CONST_ARR_LEN(a) (sizeof(a) / sizeof(*a))
-#define strcenter(str, col, len)                                               \
-  ((int)(col + len / 2)), str, ((int)(col - len / 2)), ""
-#define strcenter_len(str, col) strcenter(str, col, strlen(str))
-#define printf_center(str, col)                                                \
-  printf("%*s%*s", strcenter(str, col, strlen(str)))
-#define printf_int_center(num, col)                                            \
-  {                                                                            \
-    char tmp_integer[10];                                                      \
-    sprintf(tmp_integer, "%d", num);                                           \
-    printf_center(tmp_integer, col);                                           \
-  }
 
 /*
  * Simple C Book Downloader

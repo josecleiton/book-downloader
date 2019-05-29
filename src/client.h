@@ -23,12 +23,17 @@ enum {
   REGULAR_FILE,
   TMP_FILE,
   JUST_FILENAME,
+  PROGRESS_BAR,
+  PROG_BAR_LEN = 70,
   CLIENT_BUFFER_SIZE = 1024,
 };
 
+
 int parse_http_header(int sock, ...);
 char *page_downloader(const char *hostname, const char *path,
-                      const int file_status, FILE **rcv_file, ...);
+                      const int file_status, FILE **rcv_file,
+                      const int show_progress_bar, ...);
+bool progress_bar(const int curr_val, const int total);
 
 #endif
 

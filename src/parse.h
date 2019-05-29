@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define TEST_STR_PTR(s) if(!s) return FAILURE
+#define TEST_STR_PTR(s, ans) if(!s) return ans
 
 /* PARSE GEN LIB RUS EC HTML PAGES */
 

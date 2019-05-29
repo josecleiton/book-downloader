@@ -15,9 +15,9 @@ int parse_http_header(int sock, ...) {
   buffer_cursor = buff + 4;
   /* puts(buffer_cursor); */
   if (bytes_received) {
-    if ((buffer_cursor = strstr(buffer_cursor, "Content-Length:"))) {
+    if ((buffer_cursor = strstr(buffer_cursor, "Content-Length:")))
       sscanf(buffer_cursor, "%*s %d", &bytes_received);
-    } else
+    else
       bytes_received = NO_CONTENT_LENGTH;
     if (buffer_cursor &&
         (buffer_cursor =
@@ -36,7 +36,8 @@ int parse_http_header(int sock, ...) {
 }
 
 char *page_downloader(const char *hostname, const char *path,
-                      const int file_status, FILE **rcv_file, ...) {
+                      const int file_status, FILE **rcv_file,
+                      const int show_progress_bar, ...) {
   char buffer[BUFSIZ];
   char request[CLIENT_BUFFER_SIZE] = {'\0'};
   char request_template[] = "GET /%s HTTP/1.1 \r\nHost: %s\r\n\r\n";
@@ -88,7 +89,7 @@ char *page_downloader(const char *hostname, const char *path,
   } else {
     content_length = parse_http_header(socketfd, filename);
     va_list arg_list;
-    va_start(arg_list, rcv_file);
+    va_start(arg_list, show_progress_bar);
     char **book_filename = va_arg(arg_list, char **);
     const long book_fn_len = va_arg(arg_list, const size_t);
     const long catched_fn_len = strlen(filename);
@@ -102,7 +103,7 @@ char *page_downloader(const char *hostname, const char *path,
       log_msg = (char *)ecalloc(1, sizeof(char));
       goto POST_ROTINES;
     }
-
+    putchar('\n');
     *rcv_file = efopen(*book_filename, "wb+");
   }
   /* *rcv_file must be "free" in sncbd.c */
@@ -117,7 +118,9 @@ char *page_downloader(const char *hostname, const char *path,
     }
     fwrite(buffer, sizeof(char), bytes_received, *rcv_file);
     bytes += bytes_received;
-    if (content_length != NO_CONTENT_LENGTH && bytes >= content_length)
+    if (content_length != NO_CONTENT_LENGTH &&
+        ((show_progress_bar && progress_bar(bytes, content_length)) ||
+         (bytes >= content_length)))
       break;
   }
   if (verbose)
@@ -125,13 +128,25 @@ char *page_downloader(const char *hostname, const char *path,
   fflush(*rcv_file);
   /* free in sncbd.c */
   log_msg = (char *)ecalloc(LOGMSG_SIZE, sizeof(char));
-  snprintf(log_msg + 1, LOGMSG_SIZE - 1, "Finished! %.2lf KBs transfered.\n",
+  snprintf(log_msg + 1, LOGMSG_SIZE - 1, "\nFinished! %.2lf KBs transfered.\n",
            bytes / (float)1024);
 
-  /* post rotines */
 POST_ROTINES:
   freeaddrinfo(servinfo);
   close(socketfd);
   return log_msg;
+}
+
+bool progress_bar(const int curr_val, const int total) {
+  int cli_ratio = (curr_val * 70) / total,
+      real_ratio = (curr_val * 100) / total;
+  putchar('[');
+  for (int i = 0; i < cli_ratio; i += 1)
+    putchar('-');
+  for (; cli_ratio < PROG_BAR_LEN; cli_ratio += 1)
+    putchar(' ');
+  printf("] %d%c\r", real_ratio, '%');
+  fflush(stdout);
+  return real_ratio >= 100;
 }
 

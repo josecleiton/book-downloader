@@ -35,7 +35,7 @@ int exec(char *args[]) {
         download_book_page_status = FAILURE;
         break;
       } else if (selected_book < FAILURE) {
-         /* page return a number between [-n, -2] */
+        /* page return a number between [-n, -2] */
         curr_page = -(selected_book + 1) - 1; /* then convert it to an array */
         continue;
       }
@@ -53,7 +53,7 @@ int exec(char *args[]) {
         download_book_page_status = 1;
         /* has been checked inside the function */
       } else
-         download_book_page_status = 0;
+        download_book_page_status = 0;
     } else {
       user_input_arg("Do you want to retry? ",
                      "Input a search string or [n]o to quit.",
@@ -96,7 +96,8 @@ void help_message(void) {
       "\t%-16sSet another sort order { id | author | title | publisher | year "
       "| pages | filesize | extension }\n"
       "\t%-16sSet another sort mode { ASC[endant] | DESC[endant] }\n"
-      "\t%-16sSet another reference folder (where .bib will be downloaded) [empty string to ignore bib file]\n"
+      "\t%-16sSet another reference folder (where .bib will be downloaded) "
+      "[empty string to ignore bib file]\n"
       "\t%-16sSet another book folder [empty string to ignore book file]\n"
       "\t%-16sVerbose mode\n\n",
       "-s", "-h", "-o", "-m", "-b", "-d", "-v");
@@ -146,7 +147,8 @@ int download_search_page(char *pattern, char **log_msg, struct book_t **books,
 
     sprintf(full_path, "%s%s%s", gen_lib_search_path, pattern, extra_args);
     /* Create a tmpfile for the html page */
-    *log_msg = page_downloader(gen_lib, full_path, TMP_FILE, &rcvd_file);
+    *log_msg = page_downloader(gen_lib, full_path, TMP_FILE, &rcvd_file,
+                               !PROGRESS_BAR);
     free(full_path);
     check_log_msg(*log_msg);
 
@@ -185,7 +187,8 @@ void print_cached_pages(const uint64_t bitset) {
 void download_mirror_page(struct book_t *selected_book, char **log_msg) {
   FILE *rcvd_file = NULL;
 
-  *log_msg = page_downloader(gen_lib, selected_book->url, TMP_FILE, &rcvd_file);
+  *log_msg = page_downloader(gen_lib, selected_book->url, TMP_FILE, &rcvd_file,
+                             !PROGRESS_BAR);
   check_log_msg(*log_msg);
 
   *log_msg = mirror_page(rcvd_file, selected_book);
@@ -196,7 +199,8 @@ bool download_book_page(struct book_t *selected_book, char **log_msg) {
   FILE *rcvd_file = NULL;
   char *hostname, *path;
   split_url(selected_book->url, &hostname, &path);
-  *log_msg = page_downloader(hostname, path, TMP_FILE, &rcvd_file);
+  *log_msg =
+      page_downloader(hostname, path, TMP_FILE, &rcvd_file, !PROGRESS_BAR);
   free(hostname);
   free(path);
   check_log_msg(*log_msg);
@@ -225,8 +229,9 @@ char *download_book(struct book_t *selected_book, char *local_save_ref_dir,
       die("scbd.c - save_dir variable not configured properly.");
     }
   }
-  log_msg = page_downloader(hostname, path, page_download_status, &rcvd_file,
-                             &selected_book->path, book_filename_len);
+  log_msg =
+      page_downloader(hostname, path, page_download_status, &rcvd_file,
+                      PROGRESS_BAR, &selected_book->path, book_filename_len);
   if (page_download_status == REGULAR_FILE) {
     free(hostname);
     free(path);

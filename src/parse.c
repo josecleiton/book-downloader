@@ -22,7 +22,7 @@ int handle_td_element(const char *buffer, const int buffer_len,
     int authors_count = 0;
     book->authors = ecalloc(1, max_authors_len);
     while ((match = strstr(buffer, "author"))) {
-      TEST_STR_PTR(match);
+      TEST_STR_PTR(match, FAILURE);
       if (authors_len > max_authors_len) {
         book->authors = (char *)erealloc(book->authors, max_authors_len * 2);
         max_authors_len *= 2;
@@ -32,10 +32,10 @@ int handle_td_element(const char *buffer, const int buffer_len,
         book->authors[authors_len++] = ' ';
       }
       match = strchr(match, '>');
-      TEST_STR_PTR(match);
+      TEST_STR_PTR(match, FAILURE);
       match += 1;
       char *close_tag = strchr(match, '<');
-      TEST_STR_PTR(match);
+      TEST_STR_PTR(match, FAILURE);
       *close_tag = '\0';
       for (int cursor = 0; match[cursor]; cursor += 1, authors_len += 1) {
         book->authors[authors_len] = match[cursor];
@@ -51,17 +51,17 @@ int handle_td_element(const char *buffer, const int buffer_len,
   } else if (which_td == BOOK_TITLE) {
     /* search for the book's url and it's title */
     match = strstr(buffer, "book");
-    TEST_STR_PTR(match);
+    TEST_STR_PTR(match, FAILURE);
     char *close_tag = strchr(match, '\'');
     *close_tag = '\0';
     book->url = (char *)ecalloc(close_tag - match + 2, sizeof(char));
     strcpy(book->url, match);
 
     match = strchr(close_tag + 1, '>');
-    TEST_STR_PTR(match);
+    TEST_STR_PTR(match, FAILURE);
     match += 1;
     close_tag = strchr(match, '<');
-    TEST_STR_PTR(match);
+    TEST_STR_PTR(match, FAILURE);
     *close_tag = '\0';
     book->title = (char *)ecalloc(close_tag - match + 2, sizeof(char));
     strcpy(book->title, match);
@@ -69,7 +69,7 @@ int handle_td_element(const char *buffer, const int buffer_len,
   } else if (which_td == BOOK_YEAR) {
     /* just jump the nowrap parameter */
     match = strchr(buffer, '>');
-    TEST_STR_PTR(match);
+    TEST_STR_PTR(match, FAILURE);
     match += 1;
     book->year = (char *)ecalloc(buffer_len - (match - buffer), sizeof(char));
     strcpy(book->year, match);
@@ -84,13 +84,13 @@ int handle_td_element(const char *buffer, const int buffer_len,
     strcpy(book->lang, buffer);
   } else if (which_td == BOOK_SIZE) {
     match = strchr(buffer, '>');
-    TEST_STR_PTR(match);
+    TEST_STR_PTR(match, FAILURE);
     match += 1;
     book->size = (char *)ecalloc(buffer_len - (match - buffer), sizeof(char));
     strcpy(book->size, match);
   } else {
     match = strchr(buffer, '>');
-    TEST_STR_PTR(match);
+    TEST_STR_PTR(match, FAILURE);
     match += 1;
     book->ext = (char *)ecalloc(buffer_len - (match - buffer), sizeof(char));
     strcpy(book->ext, match);
@@ -123,7 +123,7 @@ char *search_page(FILE *page_file, struct book_t **book_array,
 
   /* set the file's cursor and compute it's size */
   if (fseek(page_file, FILE_BEG, SEEK_SET) && ferror(page_file)) {
-     die("parse.c - fseek in search_page");
+    die("parse.c - fseek in search_page");
   }
   char buffer[BOOK_PARSE_BUFFER_SIZE] = {'\0'};
   /* put the formated file in memory */
@@ -151,6 +151,7 @@ char *search_page(FILE *page_file, struct book_t **book_array,
          curr_pattern += 1) {
       while (STATE < MAX_TD_PER_SEARCH) {
         if ((match_cursor = strstr(buffer_cursor, pattern[curr_pattern]))) {
+          TEST_STR_PTR(match_cursor, error_msg("[ERROR] parse.c - HTTP #2"));
           if (curr_pattern == 1) {
             /* ignore first td */
             match_cursor += 36;
@@ -163,8 +164,7 @@ char *search_page(FILE *page_file, struct book_t **book_array,
             match_cursor += 4;
             /* search for the td close tag */
             char *close_td = strstr(match_cursor, pattern[curr_pattern + 1]);
-            if (!close_td)
-              return error_msg("[ERROR] parse.c - HTTP #2");
+            TEST_STR_PTR(close_td, error_msg("[ERROR] parse.c - HTTP #3"));
             *close_td = '\0';
             if ((*status = handle_td_element(
                      match_cursor, close_td - match_cursor + 1,
@@ -237,8 +237,11 @@ char *book_page(FILE *page_file, struct book_t *selected_book) {
 
   for (int curr_pattern = 0; curr_pattern < PATTERNS; curr_pattern += 1) {
     if ((match = strstr(buffer_cursor, pattern[curr_pattern]))) {
+      TEST_STR_PTR(match, error_msg("[ERROR] parse.c - HTTP REQUEST #6"));
       if (curr_pattern == BOOK_DOWNLOAD_LINK) {
-        match = strstr(match, "href") + 6;
+        match = strstr(match, "href");
+        TEST_STR_PTR(match, error_msg("[ERROR] parse.c - HTTP REQUEST #7"));
+        match += 6;
         close_tag = strchr(match, '\"');
         *close_tag = '\0';
         selected_book->download_url =
@@ -247,6 +250,7 @@ char *book_page(FILE *page_file, struct book_t *selected_book) {
       } else if (curr_pattern == BOOK_SERIES) {
         match += 8;
         close_tag = strchr(match, '<');
+        TEST_STR_PTR(close_tag, error_msg("[ERROR] parse.c - HTTP REQUEST #8"));
         *close_tag = '\0';
         selected_book->series =
             (char *)ecalloc(close_tag - match + 1, sizeof(char));
@@ -254,13 +258,18 @@ char *book_page(FILE *page_file, struct book_t *selected_book) {
       } else if (curr_pattern == BOOK_ISBN) {
         match += 6;
         close_tag = strchr(match, '<');
+        TEST_STR_PTR(close_tag, error_msg("[ERROR] parse.c - HTTP REQUEST #9"));
         *close_tag = '\0';
         selected_book->isbn =
             (char *)ecalloc(close_tag - match + 1, sizeof(char));
         strcpy(selected_book->isbn, match);
       } else if (match) { /* may not have description */
-        match = strchr(match, '>') + 1;
+        match = strchr(match, '>');
+        TEST_STR_PTR(match, error_msg("[ERROR] parse.c - HTTP REQUEST #10"));
+        match += 1;
         close_tag = strchr(match, '<');
+        TEST_STR_PTR(close_tag,
+                     error_msg("[ERROR] parse.c - HTTP REQUEST #11"));
         /* must be "free" in snbd.c */
         selected_book->description =
             (char *)ecalloc(close_tag - match + 1, sizeof(char));
@@ -269,7 +278,7 @@ char *book_page(FILE *page_file, struct book_t *selected_book) {
       }
       buffer_cursor = close_tag + 1;
     } else if (!curr_pattern)
-      return error_msg("[ERROR] parse.c - HTTP REQUEST #5");
+      return error_msg("[ERROR] parse.c - HTTP REQUEST #12");
   }
   char *log_msg = ecalloc(1, sizeof(char));
   /* post rotines */
@@ -307,6 +316,7 @@ char *mirror_page(FILE *page_file, struct book_t *selected_book) {
     if ((match = strstr(buffer_cursor, pattern[curr_pattern]))) {
       if (curr_pattern <= BOOK_ID) {
         match = strstr(match, "<td>") + 4;
+        TEST_STR_PTR(match, error_msg("[ERROR] parse.c - HTTP REQUEST #14"));
         close_tag = strchr(match, '<');
         *close_tag = '\0';
         size_t len = close_tag - match;
@@ -321,15 +331,19 @@ char *mirror_page(FILE *page_file, struct book_t *selected_book) {
           strcpy(selected_book->volume, match);
         }
       } else if (curr_pattern == BOOK_MIRRORS) {
-        match = strstr(match, "<a href=\"") + 9;
+        match = strstr(match, "<a href=\"");
+        TEST_STR_PTR(match, error_msg("[ERROR] parse.c - HTTP REQUEST #15"));
+        match += 9;
         close_tag = strchr(match, '"');
+        TEST_STR_PTR(close_tag,
+                     error_msg("[ERROR] parse.c - HTTP REQUEST #16"));
         *close_tag = '\0';
         selected_book->url = (char *)erealloc(
             selected_book->url, (close_tag - match + 1) * sizeof(char));
         strcpy(selected_book->url, match);
-      }
-    } else
-      return error_msg("[ERROR] parse.c - HTTP REQUEST #6");
+      } else
+        error_msg("[ERROR] parse.c - HTTP REQUEST #13");
+    }
     buffer_cursor = close_tag + 1;
   }
 
@@ -340,10 +354,10 @@ char *mirror_page(FILE *page_file, struct book_t *selected_book) {
 
 int get_max_pages(const char *buffer) {
   char *match_cursor = strstr(buffer, "new Paginator");
-  TEST_STR_PTR(match_cursor);
+  TEST_STR_PTR(match_cursor, FAILURE);
   for (int comma = 0; comma < 3; comma += 1) {
     match_cursor = strchr(match_cursor, ',') + 1;
-    TEST_STR_PTR(match_cursor);
+    TEST_STR_PTR(match_cursor, FAILURE);
   }
   int ans;
   char *close_tag = match_cursor;
