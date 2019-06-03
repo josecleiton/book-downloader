@@ -24,14 +24,16 @@ enum {
   TMP_FILE,
   JUST_FILENAME,
   PROGRESS_BAR,
+  SEARCH_PAGE,
+  MIRROR_PAGE,
+  BOOK_PAGE,
   PROG_BAR_LEN = 70,
   CLIENT_BUFFER_SIZE = 1024,
 };
 
-
 int parse_http_header(int sock, ...);
-char *page_downloader(const char *hostname, const char *path,
-                      const int file_status, FILE **rcv_file,
+char *page_downloader(const char *hostname, const char *path, FILE **rcv_file,
+                      int *file_size, const int file_status,
                       const int show_progress_bar, ...);
 bool progress_bar(const int curr_val, const int total);
 

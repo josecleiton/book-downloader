@@ -25,19 +25,27 @@ enum {
   BOOK_EXT,
   BOOK_ISBN,
   BOOK_SERIES,
+  BOOK_VOLUME,
+  BOOK_PERIODICAL,
+  BOOK_DESCR,
   BOOK_PARSE_BUFFER_SIZE = 65536
 };
 
 /* return all books in the page */
-char *search_page(FILE *page_file, struct book_t **book_array,
-                  int *book_array_len, int *status, int *max_pages_in_search);
+char *search_page(FILE *page_file, const int file_size,
+                  struct book_t **book_array, int *book_array_len, int *status,
+                  int *max_pages_in_search);
 /* return: download link of selected book */
-char *book_page(FILE *page_file, struct book_t *selected_book);
-char *mirror_page(FILE *page_file, struct book_t *selected_book);
+char *book_page(FILE *page_file, const int file_size,
+                struct book_t *selected_book);
+char *mirror_page(FILE *page_file, const int file_size,
+                  struct book_t *selected_book);
 
 void format_file(FILE *stream, register char *buffer);
 int handle_td_element(const char *buffer, const int buffer_len,
                       struct book_t *book, const int which_td);
+/* find needle in s, and return the last character */
+char *strrchr_b(char *s, const int c);
 int get_max_pages(const char *buffer);
 
 #endif

@@ -42,7 +42,7 @@ int exec(char *args[]) {
       continue;
     }
     selected_book -= 1; /* user input is [1 - n], we need to convert it */
-    if (!pages.lib[curr_page].books[selected_book].isbn)
+    if (!pages.lib[curr_page].books[selected_book].id)
       download_mirror_page(&pages.lib[curr_page].books[selected_book],
                            &log_msg);
     /* first download the book page in gen lib then download the document it
@@ -51,6 +51,8 @@ int exec(char *args[]) {
              &pages.lib[curr_page].books[selected_book], &log_msg)) == SUCCESS)
       log_msg = download_book(&pages.lib[curr_page].books[selected_book],
                               local_save_ref_dir, local_save_dir);
+    else
+      download_book_page_status = FAILURE;
   }
   if (download_book_page_status == SUCCESS)
     success_message(log_msg, &pages.lib[curr_page].books[selected_book],
@@ -106,7 +108,7 @@ void success_message(char *msg, const struct book_t *selected_book,
 
 void check_log_msg(char *msg) {
   if (*msg) {
-    char log_msg[LOGMSG_SIZE] = { '\0' };
+    char log_msg[LOGMSG_SIZE] = {'\0'};
     strcpy(log_msg, msg);
     free(msg);
     die(log_msg);
@@ -118,10 +120,14 @@ int download_search_page(char *pattern, char **log_msg, struct book_t **books,
                          int *books_len, const int curr_page,
                          uint64_t *cached_pages, const char *sort_book_order,
                          const char *sort_mode) {
-  printf("\nSearch pattern: %s\n", pattern);
+  printf("\nSearch pattern: %s\n\nWarning: some book information may be wrong "
+         "because of mistake in it's upload, after downloading it double check "
+         "the reference file.\n",
+         pattern);
   if (!is_cached(curr_page, *cached_pages)) {
     int status;
     FILE *rcvd_file = NULL;
+    int file_size = 0;
     enum { EXTRA_ARGS_LEN = 64 };
 
     char extra_args[EXTRA_ARGS_LEN] = {'\0'};
@@ -138,15 +144,16 @@ int download_search_page(char *pattern, char **log_msg, struct book_t **books,
 
     sprintf(full_path, "%s%s%s", gen_lib_search_path, pattern, extra_args);
     /* Create a tmpfile for the html page */
-    *log_msg = page_downloader(gen_lib, full_path, TMP_FILE, &rcvd_file,
-                               !PROGRESS_BAR);
+    *log_msg = page_downloader(gen_lib, full_path, &rcvd_file, &file_size,
+                               TMP_FILE, !PROGRESS_BAR);
     free(full_path);
     if (**log_msg)
       return FAILURE;
     else
-       check_log_msg(*log_msg);
+      check_log_msg(*log_msg);
 
-    *log_msg = search_page(rcvd_file, books, books_len, &status, &MAX_PAGES);
+    *log_msg = search_page(rcvd_file, file_size, books, books_len, &status,
+                           &MAX_PAGES);
     if (!curr_page) {
       MAX_PAGES = MIN(MAX_PAGES, (int)sizeof(uint64_t) * 8);
       *books_len = MIN(*books_len, MAX_BOOKS_PER_PAGE);
@@ -180,26 +187,28 @@ void print_cached_pages(const uint64_t bitset) {
 
 void download_mirror_page(struct book_t *selected_book, char **log_msg) {
   FILE *rcvd_file = NULL;
+  int file_size = 0;
 
-  *log_msg = page_downloader(gen_lib, selected_book->url, TMP_FILE, &rcvd_file,
-                             !PROGRESS_BAR);
+  *log_msg = page_downloader(gen_lib, selected_book->url, &rcvd_file,
+                             &file_size, TMP_FILE, !PROGRESS_BAR);
   check_log_msg(*log_msg);
 
-  *log_msg = mirror_page(rcvd_file, selected_book);
+  *log_msg = mirror_page(rcvd_file, file_size, selected_book);
   check_log_msg(*log_msg);
 }
 
 bool download_book_page(struct book_t *selected_book, char **log_msg) {
   FILE *rcvd_file = NULL;
+  int file_size = 0;
   char *hostname, *path;
   split_url(selected_book->url, &hostname, &path);
-  *log_msg =
-      page_downloader(hostname, path, TMP_FILE, &rcvd_file, !PROGRESS_BAR);
+  *log_msg = page_downloader(hostname, path, &rcvd_file, &file_size, TMP_FILE,
+                             !PROGRESS_BAR);
   free(hostname);
   free(path);
   check_log_msg(*log_msg);
 
-  *log_msg = book_page(rcvd_file, selected_book);
+  *log_msg = book_page(rcvd_file, file_size, selected_book);
   check_log_msg(*log_msg);
 
   CLEAR;
@@ -210,6 +219,7 @@ bool download_book_page(struct book_t *selected_book, char **log_msg) {
 char *download_book(struct book_t *selected_book, char *local_save_ref_dir,
                     char *local_save_dir) {
   FILE *rcvd_file = NULL;
+  int file_size = 0;
   long book_filename_len = 0;
   char *hostname = NULL, *path = NULL, *log_msg = NULL;
   const int page_download_status =
@@ -222,9 +232,9 @@ char *download_book(struct book_t *selected_book, char *local_save_ref_dir,
     if (mkdir_status == ENOTDIR || mkdir_status == ENAMETOOLONG)
       die("scbd.c - save_dir variable not configured properly.");
   }
-  log_msg =
-      page_downloader(hostname, path, page_download_status, &rcvd_file,
-                      PROGRESS_BAR, &selected_book->path, book_filename_len);
+  log_msg = page_downloader(hostname, path, &rcvd_file, &file_size,
+                            page_download_status, PROGRESS_BAR,
+                            &selected_book->path, book_filename_len);
   free(hostname);
   free(path);
   if (page_download_status == REGULAR_FILE)
@@ -301,9 +311,9 @@ void print_table_of_books(struct book_t *array, const int array_len,
   };
 
   const struct columns columns[] = {
-      {"Idx", 3},        {"Authors", 16}, {"Title", 30},
-      {"Publisher", 10}, {"Year", 6},     {"Pages", 8},
-      {"Language", 12},  {"Size", 6},     {"Ext", 6}};
+      {"Idx", 2},        {"Authors", 8}, {"Title", 20},
+      {"Publisher", 10}, {"Year", 6},    {"Pages", 6},
+      {"Language", 3},   {"Size", 6},    {"Ext", 5}};
 
   int total_len = 2;
   const int columns_len = (int)CONST_ARR_LEN(columns);
@@ -342,6 +352,10 @@ void print_table_of_books(struct book_t *array, const int array_len,
                          columns[curr_column].max_length);
         break;
       case BOOK_PAGES:
+        draw_book_column(array[curr_book].pages,
+                         columns[curr_column].max_length);
+        break;
+      case BOOK_LANG:
         draw_book_column(array[curr_book].lang,
                          columns[curr_column].max_length);
         break;
@@ -372,22 +386,29 @@ void draw_book_column(char *text, const size_t len) {
 
 void print_more_info(struct book_t *selected_book) {
   logo();
-  puts("---> Selected book information\n");
-  printf("%-15s%s\n", "Title:", selected_book->title);
-  printf("%-15s%s\n", "Authors:", selected_book->authors);
-  printf("%-15s%s\n", "Year:", selected_book->year);
-  printf("%-15s%s\n", "Pages:", selected_book->pages);
-  printf("%-15s%s\n", "Series:", selected_book->series);
-  if (selected_book->edition) {
+  printf("---> BOOK INFO\n\n"
+         "%-15s%s\n"
+         "%-15s%s\n"
+         "%-15s%s\n"
+         "%-15s%s\n"
+         "%-15s%s\n",
+         "Title:", selected_book->title, "Authors:", selected_book->authors,
+         "Year:", selected_book->year, "Pages:", selected_book->pages,
+         "Series:", selected_book->series);
+
+  if (selected_book->periodical)
+    printf("%-15s%s\n", "Periodical:", selected_book->periodical);
+  if (selected_book->edition)
     printf("%-15s%s\n", "Edition:", selected_book->edition);
-  }
-  printf("%-15s%s\n", "Language:", selected_book->lang);
-  printf("%-15s%s\n", "ISBN:", selected_book->isbn);
-  printf("%-15s%s\n", "Size:", selected_book->size);
-  if (selected_book->description) {
-    putchar('\n');
-    printf("%-15s%s\n", "Description:", selected_book->description);
-  }
+
+  printf("%-15s%s\n"
+         "%-15s%s\n"
+         "%-15s%s\n",
+         "Language:", selected_book->lang, "ISBN:", selected_book->isbn,
+         "Filesize:", selected_book->size);
+
+  if (selected_book->description)
+    printf("\n%-15s%s\n", "Description:", selected_book->description);
   puts("\n--->");
 }
 

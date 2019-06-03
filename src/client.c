@@ -35,8 +35,8 @@ int parse_http_header(int sock, ...) {
   return bytes_received;
 }
 
-char *page_downloader(const char *hostname, const char *path,
-                      const int file_status, FILE **rcv_file,
+char *page_downloader(const char *hostname, const char *path, FILE **rcv_file,
+                      int *file_size, const int file_status,
                       const int show_progress_bar, ...) {
   char buffer[BUFSIZ];
   char request[CLIENT_BUFFER_SIZE] = {'\0'};
@@ -127,6 +127,7 @@ char *page_downloader(const char *hostname, const char *path,
   if (verbose)
     fprintf(stderr, "Bytes received = %d\n", bytes);
   fflush(*rcv_file);
+  *file_size = bytes;
   log_msg = (char *)ecalloc(LOGMSG_SIZE, sizeof(char));
   snprintf(log_msg + 1, LOGMSG_SIZE - 1, "Finished! %.2lf KBs transfered.",
            bytes / (float)1024);

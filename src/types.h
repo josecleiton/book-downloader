@@ -35,6 +35,7 @@ struct book_t {
   char *description;
   char *download_url;
   char *path;
+  char *periodical;
 };
 
 typedef struct {

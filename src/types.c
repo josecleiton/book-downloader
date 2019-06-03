@@ -11,12 +11,15 @@ void book_t_free(const struct book_t *book) {
   free(book->title);
   free(book->url);
   free(book->authors);
-  free(book->year);
+  if (book->year)
+    free(book->year);
   free(book->publisher);
   free(book->pages);
   free(book->lang);
   free(book->size);
   free(book->ext);
+  if (book->periodical)
+     free(book->periodical);
   if (book->edition)
     free(book->edition);
   if (book->id)
