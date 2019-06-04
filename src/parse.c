@@ -116,6 +116,7 @@ char *search_page(FILE *page_file, const int file_size,
 
   char *match_cursor = NULL;
   int book_count = 0;
+  *status = FAILURE;
 
   /* jump after book's table and it's first tr in html buffer */
   char *buffer_cursor = strstr(buffer, pattern[0]) + 85;
@@ -126,6 +127,8 @@ char *search_page(FILE *page_file, const int file_size,
 
   while (book_count < BOOKS_PER_PAGE) {
     buffer_cursor = strstr(buffer_cursor, pattern[1]) + 1;
+    TEST_STR_PTR(buffer_cursor - 1,
+                 error_msg("[ERROR] parse.c - BOOK NOT FOUND"));
     if (!(buffer_cursor - 1) && book_count) {
       book_count = book_count;
       break;
