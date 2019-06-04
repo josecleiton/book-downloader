@@ -1,6 +1,7 @@
 #ifndef PARSE_H
 #define PARSE_H
 
+#include "config.h"
 #include "error.h"
 #include "types.h"
 #include <ctype.h>

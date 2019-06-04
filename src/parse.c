@@ -88,7 +88,6 @@ char *search_page(FILE *page_file, const int file_size,
   enum {
     PATTERNS = 4,
     MAX_TD_PER_SEARCH = 8,
-    BOOKS_PER_PAGE = 25,
     FILE_BEG = 40000, /* file beginning position */
   };
 
@@ -112,7 +111,7 @@ char *search_page(FILE *page_file, const int file_size,
 
   struct book_t *books;
   books = *book_array =
-      (struct book_t *)ecalloc(BOOKS_PER_PAGE, sizeof(struct book_t));
+      (struct book_t *)ecalloc(MAX_BOOKS_PER_PAGE, sizeof(struct book_t));
 
   char *match_cursor = NULL;
   int book_count = 0;
@@ -125,14 +124,11 @@ char *search_page(FILE *page_file, const int file_size,
                          "received. Try again. \nHTTP REQUEST #1"));
   bool book_td_parse_finalized = false;
 
-  while (book_count < BOOKS_PER_PAGE) {
+  while (book_count < MAX_BOOKS_PER_PAGE)  {
     buffer_cursor = strstr(buffer_cursor, pattern[1]) + 1;
-    TEST_STR_PTR(buffer_cursor - 1,
-                 error_msg("[ERROR] parse.c - BOOK NOT FOUND"));
-    if (!(buffer_cursor - 1) && book_count) {
-      book_count = book_count;
+    if (!(buffer_cursor - 1) && book_count)
       break;
-    } else if (!(buffer_cursor))
+    else if (!(buffer_cursor - 1))
       return error_msg("[ERROR] parse.c - BOOK NOT FOUND");
     for (int i = 0; i < 2; i += 1) {
       buffer_cursor = strstr(buffer_cursor, "td") + 1;
