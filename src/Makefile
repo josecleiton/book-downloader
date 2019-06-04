@@ -30,7 +30,7 @@ install: $(MAIN)
 				 chmod 755 $(DESTDIR)$(PREFIX)/bin/$(MAIN)
 				 mkdir -p $(DESTDIR)$(MANPREFIX)/man1
 				 sed "s/VERSION/$(VERSION)/g" < $(MAIN).1 > $(DESTDIR)$(MANPREFIX)/man1/$(MAIN).1
-				 chmod 644 $(DESDIR)$(MANPREFIX)/man1/$(MAIN).1
+				 chmod 644 $(DESTDIR)$(MANPREFIX)/man1/$(MAIN).1
 				 @echo Please take a look in README and LICENSE files.
 				 @echo Have a nice day
 
