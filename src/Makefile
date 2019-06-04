@@ -6,6 +6,8 @@ OBJS = $(SRCS:.c=.o)
 LIBS = -lm
 MAIN = scbd
 VERSION = 0.1
+MANPREFIX = $(PREFIX)/share/man
+
 
 all: $(MAIN)
 	   @echo Simple C Book Downloader has been compiled
@@ -26,11 +28,14 @@ install: $(MAIN)
 				 mkdir -p $(DESTDIR)$(PREFIX)/bin
 				 cp -f $(MAIN) $(DESTDIR)$(PREFIX)/bin
 				 chmod 755 $(DESTDIR)$(PREFIX)/bin/$(MAIN)
-				 @echo The binary is $(DESTDIR)$(PREFIX)/bin/$(MAIN)
+				 mkdir -p $(DESDIR)$(MANPREFIX)/man1
+				 sed "s/VERSION/$(VERSION)/g" < $(MAIN).1 > $(DESTDIR)$(MANPREFIX)/man1/$(MAIN).1
+				 chmod 644 $(DESDIR)$(MANPREFIX)/man1/$(MAIN).1
 				 @echo Please take a look in README and LICENSE files.
 				 @echo Have a nice day
 
 uninstall:
 	rm -f $(DESTDIR)$(PREFIX)/bin/$(MAIN)
+	rm -f $(DESDIR)$(MANPREFIX)/man1/$(MAIN).1
 
 .PHONY: all clean install uninstall

@@ -25,7 +25,7 @@ Optional arguments:
 
         -o               Set another sort order { id | author | title | publisher | year | pages | filesize | extension }
 
-        -h               Set another sort mode { ASC[endant] | DESC[endant] }
+        -m               Set another sort mode { ASC[endant] | DESC[endant] }
 
         -b               Set another reference folder (where .bib will be downloaded) [empty string to ignore bib file]
 

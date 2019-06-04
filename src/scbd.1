@@ -1,0 +1,46 @@
+.\" Title: scbd
+.\" Date: 2019-06-04
+.\" Language: English
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.nh
+.ad l
+.TH "SCBD" "1" "04  Jun 2019" "0\&.1" "scbd man page"
+.SH NAME
+\fBscbd VERSION\fR \- Simple C Book Downloader
+.SH SYNOPSIS
+\fBscbd\fR \-s STRING
+.SH DESCRIPTION
+The \fBscbd\fR is a tool to download \fBreference\fR files (LaTeX) and \fBbooks\fR using \fBLibrary Genesis\fR as a repository.
+
+This software was developed following suckless philosophy.
+.SH OPTIONS
+.PP
+\fB\-o\fR
+.RS 4
+Changes the sort order [id | author | title | publisher | year | pages | filesize | extension]
+.RE
+.PP
+\fB\-m\fR
+.RS 4
+Set sort mode ASC (ascendant) or DESC (descendant)
+.RE
+.PP
+\fB\-d\fR
+.RS 4
+Set another book folder or insert an empty string to ignore book file. Default: ~/.cache/scbd
+.RE
+.PP
+\fB\-b\fR
+.RS 4
+Set another reference folder, input an empty string to ignore reference file. Default: ~/.cache/scbd
+.RE
+.PP
+\fB\-v\fR
+.RS 4
+Verbose mode
+.RE
+
+.SH AUTHOR
+José Cleiton (jcleionbc@gmail.com)
+
