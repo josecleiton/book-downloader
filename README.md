@@ -4,6 +4,12 @@
 
 #### Installation
 
+##### ArchLinux based distros
+
+`yay -S scbd-git`
+
+##### Others
+
 `git clone https://github.com/josecleiton/book-downloader.git`
 
 `cd book-downloader/src`
