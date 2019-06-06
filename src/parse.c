@@ -214,7 +214,6 @@ char *book_page(FILE *page_file, const int file_size,
         sscanf(match, "%[^\"]", selected_book->download_url);
       } else if (curr_pattern == BOOK_SERIES) {
         match += 8;
-        close_tag = strchr(match, '<');
         selected_book->series =
             (char *)ecalloc(strchr(match, '<') - match + 1, sizeof(char));
         sscanf(match, "%[^<]", selected_book->series);
@@ -228,11 +227,15 @@ char *book_page(FILE *page_file, const int file_size,
         TEST_STR_PTR(match - 1,
                      error_msg("[ERROR] parse.c - Only part of the page "
                                "received. Try again. \nHTTP REQUEST #10"));
+        close_tag = strstr(match, "</div");
+        TEST_STR_PTR(close_tag, error_msg("[ERROR] parse.c - HTTP"));
+        *close_tag = '\0';
         selected_book->description =
-            (char *)ecalloc(strchr(match, '<') - match + 1, sizeof(char));
-        sscanf(match, "%[^<]", selected_book->description);
+            (char *)ecalloc(close_tag - match + 1, sizeof(char));
+        strcpy(selected_book->description, match);
+        match = close_tag + 1;
       }
-      buffer_cursor = close_tag + 1;
+      buffer_cursor = match + 1;
     } else if (!curr_pattern)
       return error_msg("[ERROR] parse.c - Only part of the page received. Try "
                        "again. \nHTTP REQUEST #6");
