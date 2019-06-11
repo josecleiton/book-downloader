@@ -239,8 +239,6 @@ char *download_book(struct book_t *selected_book, char *local_save_ref_dir,
   free(path);
   if (page_download_status == REGULAR_FILE)
     fclose(rcvd_file);
-  else
-    *(selected_book->path) = '\0';
   generate_ref(selected_book, book_filename_len, local_save_ref_dir);
   return log_msg;
 }
